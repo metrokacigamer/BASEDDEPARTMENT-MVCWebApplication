@@ -1,0 +1,57 @@
+.align-right {
+    margin-left: auto;
+    margin-right: 20px;
+}
+
+.left-navbar {
+    left: auto !important;
+    right: 0; 
+    /*transform: translateX(-100%);*/ 
+}
+
+
+html {
+    font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+/*.left-column {
+    float: left;*/ /* Float the column to the left */
+    /*width: 30%;*/ /* Set the width of the column */
+    /*padding: 20px;*/ /* Add some padding for spacing */
+    /*box-sizing: border-box;*/ /* Include padding in width calculation */
+/*}*/
+
+/* Define styles for right column */
+/*.right-column {
+    float: right;*/ /* Float the column to the right */
+    /*width: 70%;*/ /* Set the width of the column */
+    /*padding: 20px;*/ /* Add some padding for spacing */
+    /*box-sizing: border-box;*/ /* Include padding in width calculation */
+/*}*/
+
+/* Clear floats to prevent layout issues */
+/*.clearfix::after {
+    content: "";
+    clear: both;
+    display: table;
+}*/
+

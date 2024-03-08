@@ -1,0 +1,70 @@
+﻿@using Microsoft.AspNetCore.Identity
+@model AssignRoleViewModel
+@{
+	var i = (int)ViewData["i"];
+	var _currentPage = (int)ViewData["CurrentPage"];
+	var totalPages = (int)ViewData["TotalPages"];
+}
+<h2>Users</h2>
+<form method="get" action="@Url.Action("AssignRole")">
+	<input type="text" name="searchString" value="@ViewData["SearchString"]"/>
+	<input type="submit" value="Search"/>
+</form>
+<table class="table">
+	<thead>
+		<th></th>
+		<th>Username</th>
+		<th>Id</th>
+		<th>Role</th>
+	</thead>
+	@foreach(var user in Model.Users)
+	{
+		++i;
+		var roles = ViewBag.Roles as IEnumerable<IdentityRole>;
+		var userRole = Model.UserRoles.FirstOrDefault(x => x.UserId == user.Id);
+		<form asp-action="AssignRole" method="post">
+			<tr>
+				<td>@i.</td>
+				<td>@user.UserName</td>
+				<td>@user.Id</td>
+				@if (userRole != default)
+				{
+					<td>@roles.First(x => x.Id == userRole.RoleId).Name</td>
+				}
+				else
+				{
+					<td>None</td>
+				}
+				<td>
+					<select class="input-group" asp-for="Role">
+						<option value="">choose a role</option>
+						@foreach(var role in ViewBag.Roles)
+						{
+							<option>@role</option>
+						}
+					</select>
+				</td>
+				<td>
+					<input type="hidden" name="UserId" value="@user.Id" />
+					<input type="hidden" name="Users" value="@Model.Users" />
+					<input type="hidden" name="UserRoles" value="@Model.UserRoles" />
+
+					<button class="btn btn-primary" type="submit">Save</button>
+				</td>
+
+			</tr>
+		</form>
+	}
+</table>
+<span>Pages: </span>
+@if(_currentPage != 1)
+{
+	var previousPage = _currentPage - 1;
+	<a href="@Url.Action("AssignRole", new {currentPage = previousPage})">@previousPage</a>
+}
+<span>@_currentPage</span>
+@if(totalPages > _currentPage)
+{
+	var nextPage = _currentPage + 1;
+	<a href="@Url.Action("AssignRole", new {currentPage = nextPage})">@nextPage</a>
+}

@@ -1,0 +1,20 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    @if (User.IsInRole("Admin"))
+    {
+        <p>შენ ხარ ადმინი და უფლება გაქვს თეთრ და შავ მონებს როზგი გადასცხო</p>
+    }
+    else if (User.IsInRole("Aristokrati"))
+    {
+        <p>შენ ხარ არისტოკრატი და უფლება გაქვს მხოლოდ თეთრ მონებს გადასცხო როზგი</p>
+    }
+    else if (User.IsInRole("Xixo"))
+    {
+        <p>შენ ხარ ხიხო.</p>
+    }
+</div>

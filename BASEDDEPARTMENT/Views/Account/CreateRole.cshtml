@@ -1,0 +1,30 @@
+﻿@model CreateRoleViewModel
+
+<div class="row justify-content-center">
+	<h2 class="text-center">Create Role</h2>
+	<div class="col-md-3 ">
+		<form asp-action="CreateRole" method="post" asp-controller="Account">
+			<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+			<div>
+				<label asp-for="RoleName" style="padding-bottom: 10px;">Role name</label>
+				<input asp-for="RoleName" class="form-control" style="margin-bottom: 10px;" />
+				<span asp-validation-for="RoleName" class="text-danger"></span>
+			</div>
+			<div class="text-center"> 
+			<button type="submit" class="btn btn-primary"> Create</button>
+			</div>
+		</form>
+
+		<p class="font-monospace" style="padding-bottom: 0; margin-top: 80px; margin-bottom: 5px;">Existing roles </p>
+		<div class="border border-dark font-monospace" style="border-radius: 5px;">
+			<ul style="padding-left: 10px">
+
+			@foreach (var role in Model.Roles)
+			{
+				<li class="list-group" style="margin-top: 5px;">@role</li>
+			}
+
+			</ul>
+		</div>
+	</div>
+</div>
