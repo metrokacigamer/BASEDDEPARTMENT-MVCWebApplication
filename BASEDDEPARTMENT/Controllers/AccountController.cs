@@ -107,7 +107,7 @@ namespace BASEDDEPARTMENT.Controllers
 			if (ModelState.IsValid)
 			{
 				var user = new IdentityUser { UserName = model.UserName };
-				if(await _userManager.FindByNameAsync(model.UserName) != null)
+				if (await _userManager.FindByNameAsync(model.UserName) != null)
 				{
 					ModelState.AddModelError(string.Empty, "Username is already taken");
 
@@ -174,7 +174,7 @@ namespace BASEDDEPARTMENT.Controllers
 			{
 				var id = User.FindFirst(ClaimTypes.NameIdentifier).Value;
 				var user = await _userManager.FindByIdAsync(id);
-				var userVM = new UserProfileViewModel { UserName = user.UserName, Id = user.Id, ActionName = actionName };
+				var userVM = new UserProfileViewModel { UserName = user.UserName!, Id = user.Id, ActionName = actionName, Email = user.Email! };
 
 				return View(userVM);
 			}
@@ -239,8 +239,8 @@ namespace BASEDDEPARTMENT.Controllers
 		{
 			if (ModelState.IsValid)
 			{
-				var user = await _userManager.FindByIdAsync(model.Id);
-				var result = await _userManager.CheckPasswordAsync(user, model.CurrentPassword);
+				var user = await _userManager.FindByIdAsync(model.Id!);
+				var result = await _userManager.CheckPasswordAsync(user!, model.CurrentPassword!);
 				if (!result)
 				{
 					ModelState.AddModelError(string.Empty, "Current password is incorrect.");
@@ -249,7 +249,7 @@ namespace BASEDDEPARTMENT.Controllers
 				}
 				if (model.NewPassword == model.ConfirmNewPassword)
 				{
-					await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+					await _userManager.ChangePasswordAsync(user!, model.CurrentPassword!, model.NewPassword!);
 
 					return RedirectToAction("EditProfile", "Account");
 				}
@@ -260,5 +260,122 @@ namespace BASEDDEPARTMENT.Controllers
 			}
 			return View(model);
 		}
+
+		[HttpGet]
+		[Authorize]
+		public IActionResult AttachUserEmail(string userName, string id)
+		{
+			var model = new AttachUserEmailViewModel
+			{
+				UserName = userName,
+				Id = id,
+			};
+			return View(model);
+		}
+
+		[HttpPost]
+		[Authorize]
+		public async Task<IActionResult> AttachUserEmail(AttachUserEmailViewModel model)
+		{
+			if (ModelState.IsValid)
+			{
+				var user = await _userManager.FindByIdAsync(model.Id!);
+				var passResult = await _userManager.CheckPasswordAsync(user!, model.Password!);
+				if (!passResult)
+				{
+					ModelState.AddModelError(string.Empty, "Incorrect password.");
+					return View(model);
+				}
+				var result = await _userManager.FindByEmailAsync(model.Email!);
+				if (result == null)
+				{
+					await _userManager.SetEmailAsync(user!, model.Email);
+
+					return RedirectToAction("EditProfile", "Account");
+				}
+
+				ModelState.AddModelError(string.Empty, "Email is already attached to a profile.");
+			}
+			return View(model);
+		}
+
+		[HttpGet]
+		[Authorize]
+		public IActionResult ChangeUserEmail(string userName, string id, string email)
+		{
+			var model = new ChangeUserEmailViewModel
+			{
+				Email = email,
+				UserName = userName,
+				Id = id,
+			};
+			return View(model);
+		}
+
+		[HttpPost]
+		[Authorize]
+		public async Task<IActionResult> ChangeUserEmail(ChangeUserEmailViewModel model)
+		{
+			if (ModelState.IsValid)
+			{
+				var user = await _userManager.FindByIdAsync(model.Id!);
+				var passResult = await _userManager.CheckPasswordAsync(user!, model.Password!);
+				if (!passResult)
+				{
+					ModelState.AddModelError(string.Empty, "Incorrect password.");
+					return View(model);
+				}
+				var result = await _userManager.FindByEmailAsync(model.NewEmail!);
+				if (result == null)
+				{
+					var _token = await _userManager.GenerateChangeEmailTokenAsync(user!, model.NewEmail!);
+
+					return RedirectToAction("CheckEmailChangeToken", "Account", new { id = model.Id, newEmail = model.NewEmail, token = _token });
+				}
+
+				ModelState.AddModelError(string.Empty, "Email is already attached to a profile.");
+			}
+
+			return View(model);
+		}
+
+		[HttpGet]
+		[Authorize]
+		public IActionResult CheckEmailChangeToken(string id, string newEmail, string token)
+		{
+			var model = new EmailChangeTokenValidationViewModel
+			{
+				Id = id,
+				Email = newEmail,
+				TempToken = token,
+			};
+
+			return View(model);
+		}
+
+
+		[HttpPost]
+		[Authorize]
+		public async Task<IActionResult> CheckEmailChangeToken(EmailChangeTokenValidationViewModel model)
+		{
+			if (ModelState.IsValid)
+			{
+
+				var user = await _userManager.FindByIdAsync(model.Id!);
+				var result = await _userManager.ChangeEmailAsync(user!, model.Email!, model.Token!);
+
+				if (result.Succeeded)
+				{
+					return RedirectToAction("EditProfile", "Account", new { actionName = "email" });
+				}
+				foreach (var error in result.Errors)
+				{
+					ModelState.AddModelError(string.Empty, error.Description);
+				}
+			}
+
+			return View(model);
+		}
+
 	}
 }

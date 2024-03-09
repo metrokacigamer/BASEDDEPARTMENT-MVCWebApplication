@@ -6,13 +6,13 @@ namespace BASEDDEPARTMENT.Models
     public class AssignRoleViewModel
     {
         [Required]
-        public string UserId { get; set; }
+        public string? UserId { get; set; }
 		
         [Required]
-		public string Role { get; set; }
+		public string? Role { get; set; }
 
-        public IEnumerable<IdentityUser> Users { get; set; }
+        public IEnumerable<IdentityUser>? Users { get; set; }
 
-        public IEnumerable<IdentityUserRole<string>> UserRoles { get; set; }
+        public IEnumerable<IdentityUserRole<string>>? UserRoles { get; set; }
 	}
 }

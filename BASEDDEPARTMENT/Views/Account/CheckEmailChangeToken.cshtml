@@ -1,0 +1,25 @@
+﻿@model EmailChangeTokenValidationViewModel
+<div class="row justify-content-center">
+	<h2 class="text-center">Create Role</h2>
+	<div class="col-md-3 ">
+		<form asp-action="CheckEmailChangeToken" method="post" asp-controller="Account">
+			<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+			<div style="width: 200px; word-wrap: break-word;">
+				<label>Your Token:</label>
+				<span>@Model.TempToken</span>
+			<div>
+				<label asp-for="Token" style="padding-bottom: 10px;"></label>
+					<input name="Token" class="form-control" style="margin-bottom: 10px;" />
+					<span asp-validation-for="Token" class="text-danger"></span>
+			</div>
+			<div class="text-center">
+
+				<input type="hidden" name="Email" value="@Model.Email" />
+				<input type="hidden" name="Id" value="@Model.Id" />
+				<input type="hidden" name="TempToken" value="@Model.TempToken" />
+
+				<button type="submit" class="btn btn-primary">Send Token</button>
+			</div>
+		</form>
+	</div>
+</div>
