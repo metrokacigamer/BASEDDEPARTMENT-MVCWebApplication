@@ -12,11 +12,14 @@ namespace BASEDDEPARTMENT
 			// Add services to the container.
 			builder.Services.AddControllersWithViews();
 			builder.Services.AddDbContext<MyDBContext>(x => x.UseSqlServer(builder.Configuration.GetConnectionString("MyConString")));
-			builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
+			builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 				{
 					options.User.RequireUniqueEmail = true;
+					options.Password.RequiredLength = 8;
 				})
 				.AddEntityFrameworkStores<MyDBContext>().AddDefaultTokenProviders();
+
+			builder.Services.AddScoped<SignInManager<AppUser>>();
 
 			var app = builder.Build();
 

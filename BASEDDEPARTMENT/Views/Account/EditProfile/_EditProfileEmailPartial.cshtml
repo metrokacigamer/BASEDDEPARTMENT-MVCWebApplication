@@ -1,8 +1,8 @@
 ﻿@using Microsoft.AspNetCore.Identity
-@inject UserManager<IdentityUser> _userManager
-@model UserProfileViewModel
+@inject UserManager<AppUser> _userManager
+@model EditProfileViewModel
 @{
-	var user = await _userManager.FindByIdAsync(Model.Id);
+	var user = await _userManager.FindByIdAsync(Model.Id!);
 }
 
 
@@ -11,7 +11,7 @@
 		@if (user?.Email == default )
 		{
 			<h2> You dont have an email attached to this profile</h2>
-			<a class="btn btn-primary" href="@Url.Action("AttachUserEmail", new { userName = Model.UserName, id = Model.Id })">
+			<a class="btn btn-primary" href="@Url.Action("AttachUserEmail", new { userName = Model.UserName, id = Model.Id })" >
 				Attach an email
 			</a>
 		}
@@ -20,7 +20,7 @@
 			<div>
 				<span class="justify-content-between d-flex" style="padding-right: 10px; ">
 					<span style="padding-top: 5px;">Email: @Model.Email</span>
-					<a class="btn btn-outline-secondary" href="@Url.Action("ChangeUserEmail", new { userName = Model.UserName, id = Model.Id, email = Model.Email })">
+					<a class="btn btn-outline-secondary" asp-action="ChangeUserEmail" asp-controller="Account" asp-route-userName="@Model.UserName" asp-route-id="@Model.Id", asp-route-email="@Model.Email">
 						Change Email
 					</a>
 				</span>

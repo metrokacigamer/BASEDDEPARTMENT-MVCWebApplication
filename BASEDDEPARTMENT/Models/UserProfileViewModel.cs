@@ -1,10 +1,10 @@
 ﻿namespace BASEDDEPARTMENT.Models
 {
-    public class UserProfileViewModel
-    {
-        public string? UserName { get; set; }
+	public class UserProfileViewModel
+	{
         public string? Id { get; set; }
-        public string? ActionName { get; set; }
-        public string? Email { get; set; }
+        public string? ImgUrl { get; set; }
+		public string? UserName { get; set; }
+        public List<string>? Posts { get; set; }
     }
 }

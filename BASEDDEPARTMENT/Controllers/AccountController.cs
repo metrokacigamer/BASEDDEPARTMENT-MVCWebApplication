@@ -9,12 +9,12 @@ namespace BASEDDEPARTMENT.Controllers
 {
 	public class AccountController : Controller
 	{
-		private readonly UserManager<IdentityUser> _userManager;
-		private readonly SignInManager<IdentityUser> _signInManager;
+		private readonly UserManager<AppUser> _userManager;
+		private readonly SignInManager<AppUser> _signInManager;
 		private readonly RoleManager<IdentityRole> _roleManager;
 		private readonly MyDBContext _context;
 
-		public AccountController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, RoleManager<IdentityRole> roleManager, MyDBContext context)
+		public AccountController(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, RoleManager<IdentityRole> roleManager, MyDBContext context)
 		{
 			_userManager = userManager;
 			_signInManager = signInManager;
@@ -30,7 +30,10 @@ namespace BASEDDEPARTMENT.Controllers
 			{
 				int pageSize = 15;
 
-				var users = _userManager.Users.Where(x => x.UserName.Contains(searchString)).OrderBy(x => x.Id).Skip((currentPage - 1) * pageSize).Take(pageSize).ToList();
+				var users = _userManager.Users.Where(x => x.UserName!.Contains(searchString))
+																	.OrderBy(x => x.Id)
+																	.Skip((currentPage - 1) * pageSize)
+																	.Take(pageSize).ToList();
 				var roles = _roleManager.Roles.ToList();
 
 				var userRoles = _context.UserRoles.ToList();
@@ -59,16 +62,16 @@ namespace BASEDDEPARTMENT.Controllers
 		{
 			if (ModelState.IsValid)
 			{
-				var user = _userManager.Users.FirstOrDefault(x => x.Id == viewModel.UserId);
-				var roleId = _context.UserRoles.FirstOrDefault(x => x.UserId == viewModel.UserId).RoleId;
+				var user = _userManager.Users.FirstOrDefault(x => x.Id.ToString() == viewModel.UserId);
+				var roleId = _context.UserRoles.FirstOrDefault(x => x.UserId.ToString() == viewModel.UserId)!.RoleId;
 
 				if (roleId != default)
 				{
-					var roleName = _roleManager.Roles.FirstOrDefault(x => x.Id == roleId).Name;
-					await _userManager.RemoveFromRoleAsync(user, roleName);
+					var roleName = _roleManager.Roles.FirstOrDefault(x => x.Id == roleId)!.Name;
+					await _userManager.RemoveFromRoleAsync(user!, roleName!);
 				}
 
-				await _userManager.AddToRoleAsync(user, viewModel.Role);
+				await _userManager.AddToRoleAsync(user!, viewModel.Role!);
 			}
 
 			return RedirectToAction("AssignRole", "Account");
@@ -80,7 +83,7 @@ namespace BASEDDEPARTMENT.Controllers
 		{
 			var roleNames = _context.Roles.Select(x => x.Name).ToList();
 			var model = new CreateRoleViewModel();
-			model.Roles = roleNames;
+			model.Roles = roleNames!;
 			return View(model);
 		}
 
@@ -106,14 +109,14 @@ namespace BASEDDEPARTMENT.Controllers
 		{
 			if (ModelState.IsValid)
 			{
-				var user = new IdentityUser { UserName = model.UserName };
-				if (await _userManager.FindByNameAsync(model.UserName) != null)
+				var user = new AppUser { UserName = model.UserName };
+				if (await _userManager.FindByNameAsync(model.UserName!) != null)
 				{
 					ModelState.AddModelError(string.Empty, "Username is already taken");
 
 					return View();
 				}
-				var result = await _userManager.CreateAsync(user, model.Password);
+				var result = await _userManager.CreateAsync(user, model.Password!);
 
 				if (result.Succeeded)
 				{
@@ -136,7 +139,7 @@ namespace BASEDDEPARTMENT.Controllers
 		{
 			if (ModelState.IsValid)
 			{
-				var result = await _signInManager.PasswordSignInAsync(model.UserName, model.Password, isPersistent: false, false);
+				var result = await _signInManager.PasswordSignInAsync(model.UserName!, model.Password!, isPersistent: false, false);
 
 				if (result.Succeeded)
 				{
@@ -152,7 +155,7 @@ namespace BASEDDEPARTMENT.Controllers
 		}
 
 		[HttpGet]
-		public async Task<IActionResult> Login()
+		public IActionResult Login()
 		{
 			return View();
 		}
@@ -161,7 +164,7 @@ namespace BASEDDEPARTMENT.Controllers
 		[Authorize]
 		public async Task<IActionResult> Logout()
 		{
-			_signInManager.SignOutAsync();
+			await _signInManager.SignOutAsync();
 
 			return RedirectToAction("Index", "Home");
 		}
@@ -172,9 +175,9 @@ namespace BASEDDEPARTMENT.Controllers
 		{
 			if (ModelState.IsValid)
 			{
-				var id = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+				var id = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 				var user = await _userManager.FindByIdAsync(id);
-				var userVM = new UserProfileViewModel { UserName = user.UserName!, Id = user.Id, ActionName = actionName, Email = user.Email! };
+				var userVM = new EditProfileViewModel { UserName = user!.UserName!, Id = user.Id, ActionName = actionName, Email = user.Email! };
 
 				return View(userVM);
 			}
@@ -199,17 +202,17 @@ namespace BASEDDEPARTMENT.Controllers
 		{
 			if (ModelState.IsValid)
 			{
-				var user = await _userManager.FindByIdAsync(model.Id);
-				var result = await _userManager.CheckPasswordAsync(user, model.Password);
+				var user = await _userManager.FindByIdAsync(model.Id!);
+				var result = await _userManager.CheckPasswordAsync(user!, model.Password!);
 				if (!result)
 				{
 					ModelState.AddModelError(string.Empty, "Incorrect password.");
 
 					return View(model);
 				}
-				if (await _userManager.FindByNameAsync(model.NewUserName) == null)
+				if (await _userManager.FindByNameAsync(model.NewUserName!) == null)
 				{
-					user.UserName = model.NewUserName;
+					user!.UserName = model.NewUserName;
 					await _userManager.UpdateAsync(user);
 
 					return RedirectToAction("EditProfile", "Account");
@@ -360,7 +363,6 @@ namespace BASEDDEPARTMENT.Controllers
 		{
 			if (ModelState.IsValid)
 			{
-
 				var user = await _userManager.FindByIdAsync(model.Id!);
 				var result = await _userManager.ChangeEmailAsync(user!, model.Email!, model.Token!);
 
@@ -377,5 +379,42 @@ namespace BASEDDEPARTMENT.Controllers
 			return View(model);
 		}
 
-	}
+		[HttpGet]
+		[Authorize]
+		public async Task<IActionResult> Profile()
+		{
+			if (ModelState.IsValid)
+			{
+				var id = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+				var user = await _userManager.FindByIdAsync(id);
+				var userVM = new UserProfileViewModel { UserName = user!.UserName, ImgUrl = user!.ImgUrl };
+
+				return View(userVM);
+			}
+			return RedirectToAction("Index", "Home");
+		}
+
+		[HttpGet]
+		[Authorize]
+		public IActionResult AddProfilePicture()
+		{
+			return View();
+		}
+
+		[HttpPost]
+        [Authorize]
+        public async Task<IActionResult> AddProfilePicture(AddImgViewModel model)
+        {
+			if (ModelState.IsValid)
+			{
+				var id = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+				var user = await _userManager.FindByIdAsync(id);
+				user!.ImgUrl = model.ImgUrl;
+				_context.SaveChanges();
+            }
+
+            return RedirectToAction("Profile", "Account");
+        }
+
+    }
 }

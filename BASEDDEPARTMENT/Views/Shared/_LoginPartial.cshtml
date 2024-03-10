@@ -1,5 +1,5 @@
 ﻿@using Microsoft.AspNetCore.Identity;
-@inject SignInManager<IdentityUser> _signInManager
+@inject SignInManager<AppUser> _signInManager
 
 <ul class="navbar-nav">
 	@if (_signInManager.IsSignedIn(User))
@@ -9,6 +9,11 @@
 				@User.Identity?.Name
 			</a>
 			<ul class="dropdown-menu left-navbar" aria-labelledby="navbar-dropdown">
+				<li class="border-bottom-0">
+					<a class="dropdown-item border-bottom" style="padding-bottom: 15px" asp-controller="Account" asp-action="Profile">
+						Profile
+					</a>
+				</li>
 				<li>
 					<a class="dropdown-item" asp-controller="Account" asp-action="EditProfile">
 						Edit Profile

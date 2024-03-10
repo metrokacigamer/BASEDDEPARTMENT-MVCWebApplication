@@ -5,6 +5,9 @@
 	var _currentPage = (int)ViewData["CurrentPage"];
 	var totalPages = (int)ViewData["TotalPages"];
 }
+
+
+
 <h2>Users</h2>
 <form method="get" action="@Url.Action("AssignRole")">
 	<input type="text" name="searchString" value="@ViewData["SearchString"]"/>
@@ -21,7 +24,7 @@
 	{
 		++i;
 		var roles = ViewBag.Roles as IEnumerable<IdentityRole>;
-		var userRole = Model.UserRoles.FirstOrDefault(x => x.UserId == user.Id);
+		var userRole = Model.UserRoles!.FirstOrDefault(x => x.UserId == user.Id);
 		<form asp-action="AssignRole" method="post">
 			<tr>
 				<td>@i.</td>
@@ -29,7 +32,7 @@
 				<td>@user.Id</td>
 				@if (userRole != default)
 				{
-					<td>@roles.First(x => x.Id == userRole.RoleId).Name</td>
+				<td>@roles!.First(x => x.Id == userRole.RoleId.ToString()).Name</td>
 				}
 				else
 				{
