@@ -11,16 +11,14 @@ namespace BASEDDEPARTMENT
 
 			// Add services to the container.
 			builder.Services.AddControllersWithViews();
-			builder.Services.AddDbContext<MyDBContext>(x => x.UseSqlServer(builder.Configuration.GetConnectionString("MyConString")));
+			builder.Services.AddDbContext<MyDBContext>(x => x.UseSqlServer(builder.Configuration.GetConnectionString("MyConString"))
+															.UseLazyLoadingProxies());
 			builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 				{
-					options.User.RequireUniqueEmail = true;
 					options.Password.RequiredLength = 8;
 				})
-				.AddEntityFrameworkStores<MyDBContext>().AddDefaultTokenProviders();
-
-			builder.Services.AddScoped<SignInManager<AppUser>>();
-
+				.AddEntityFrameworkStores<MyDBContext>()
+				.AddDefaultTokenProviders();
 			var app = builder.Build();
 
 			// Configure the HTTP request pipeline.

@@ -1,0 +1,21 @@
+﻿@model PostViewModel
+<ul class="navbar-nav custom-navbar">
+	<li class="nav-item dropdown">
+		<a class="nav-link overlay-mini" href="#" id="navbar-dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+			. . .
+		</a>
+		<ul class="dropdown-menu adjusted-navbar" aria-labelledby="navbar-dropdown">
+			<li class="border-bottom-0">
+				<a class="dropdown-item border-bottom" asp-route-postId="@Model.PostId" style="padding-bottom: 15px" asp-controller="Post" asp-action="EditPost">
+					Edit
+				</a>
+			</li>
+			<li>
+			<a class="dropdown-item" asp-route-postId="@Model.PostId" asp-controller="Post" asp-action="DeletePost">
+					Delete
+				</a>
+			</li>
+		</ul>
+	</li>
+</ul>
+

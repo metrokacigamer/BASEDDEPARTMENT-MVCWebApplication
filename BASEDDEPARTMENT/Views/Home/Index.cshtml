@@ -1,13 +1,13 @@
-﻿@{
+﻿@model IEnumerable<IndexPostViewModel>
+@{
     ViewData["Title"] = "Home Page";
 }
 
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <h1 class="display-5">აიმაღლე სოციალური სტატუსი ჩვენთან!</h1>
     @if (User.IsInRole("Admin"))
     {
-        <p>შენ ხარ ადმინი და უფლება გაქვს თეთრ და შავ მონებს როზგი გადასცხო</p>
+        <p>შენ ხარ ადმინი და უფლება გაქვს თეთრ და შავ მონებს როზგი მოსცხო</p>
     }
     else if (User.IsInRole("Aristokrati"))
     {
@@ -18,3 +18,184 @@
         <p>შენ ხარ ხიხო.</p>
     }
 </div>
+<div class="content">
+
+    @foreach(var postVM in Model)
+    {
+        <div class="post-content">
+			<div class="post">
+				<div class="post-header">
+
+					<a asp-action="Profile" asp-controller="Account" asp-route-userId="@postVM.UserId">
+						<img src="@Url.Content(postVM.UserImgUrl)" class="image"/>
+					</a>
+
+					<div class="username">
+						<a asp-action="Profile" asp-controller="Account" asp-route-userId="@postVM.UserId">
+							@postVM.UserName
+						</a>
+					</div>
+					@if ((postVM.UpdatedDate - postVM.CreatedDate)!.Value.Seconds < 1)
+					{
+						<div class="date">
+							posted @postVM.CreatedDate
+						</div>
+					}
+					else
+					{
+						<div class="date">
+							edited @postVM.UpdatedDate
+						</div>
+					}
+				</div>
+				<div style="padding: 0 10px;">
+					@postVM.Content
+				</div>
+			</div>
+		</div>
+    }
+</div>
+
+<style>
+	.post-header{
+		padding-top: 6px;
+		display: flex;
+		flex-direction: row;
+		justify-content: space-evenly;
+	}
+
+
+	.username a {
+		text-decoration: none;
+		color: black;
+	}
+
+	.username a:hover {
+		text-decoration: underline;
+		color: red;
+	}
+
+	.username {
+		margin-left: 20px;
+		margin-right: auto;
+		padding-top: 5px;
+	}
+
+	:root {
+		--overlay-size: 40px; /* Define the default size */
+	}
+
+	.adjusted-navbar {
+		min-width: 5rem;
+		text-align: center;
+	}
+
+	.overlay-mini {
+		line-height: calc(var(--overlay-size) * 40/100);
+		width: var(--overlay-size);
+		height: var(--overlay-size);
+		border-radius: 50%;
+		transition: background-color 0.3s;
+		color: black;
+		overflow: hidden;
+	}
+
+		.overlay-mini:hover {
+			background-color: rgba(0, 0, 0, 0.2); /* Change background color on hover */
+		}
+
+	.custom-navbar {
+		text-align: center;
+		align-self: center;
+		opacity: 0;
+		transition: opacity 0.3s ease;
+	}
+
+		.custom-navbar:hover {
+			opacity: 1;
+			transition: 0.3s ease;
+		}
+
+
+	.post-content {
+		margin: 25px 0 25px 0;
+		padding: 0 10px 10px 10px;
+		display: flex;
+		flex-direction: row;
+	}
+
+	.date {
+		text-align: right;
+		font-style: italic;
+		font-size: 0.8rem
+	}
+
+
+	.no-content {
+		text-align: center;
+	}
+
+	.post {
+		margin-left: 10px;
+		width: 600px;
+		min-height: 120px;
+		border: solid 1px lightgrey;
+		border-radius: 10px;
+		border-left: 0;
+		border-right: 0;
+		border-bottom: 0;
+		word-wrap: break-word;
+	}
+
+	.content {
+		align-self: center;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.image-container {
+		position: relative;
+		border-radius: 100px;
+		overflow: hidden;
+	}
+
+
+	.image {
+		margin-left: 10px;
+		margin-right: 0;
+		width: 50px;
+		height: 50px;
+		object-fit: cover;
+		border-radius: 50%;
+	}
+
+	/* 	.add-content {
+			align-self: center;
+			font-size: 1rem;
+			font-family: Verdana;
+			text-align: center;
+			display: flex;
+			flex-direction: column;
+		} 
+		
+	.add-post:focus {
+		outline: none;  
+		border-color: lightgrey;
+
+		.add-post {
+			width: 600px;
+			min-height: 120px;
+			border: solid 1px lightgrey;
+			border-radius: 10px;
+			margin-top: 50px;
+			resize: none;
+			overflow: hidden;
+			scrollbar-width: none;
+			-ms-overflow-style: none;
+			scrollbar-color: transparent transparent;
+			scrollbar-width: thin;
+		}
+	}*/
+		
+</style>

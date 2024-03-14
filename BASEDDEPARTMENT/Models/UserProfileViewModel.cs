@@ -5,6 +5,6 @@
         public string? Id { get; set; }
         public string? ImgUrl { get; set; }
 		public string? UserName { get; set; }
-        public List<string>? Posts { get; set; }
+        public IEnumerable<PostViewModel>? Posts { get; set; }
     }
 }

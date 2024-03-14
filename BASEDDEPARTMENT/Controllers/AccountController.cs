@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -23,7 +24,7 @@ namespace BASEDDEPARTMENT.Controllers
 		}
 
 		[HttpGet]
-		[Authorize]
+		[Authorize(Roles = "Admin")]
 		public IActionResult AssignRole(string searchString = "", int currentPage = 1)
 		{
 			if (ModelState.IsValid)
@@ -31,9 +32,10 @@ namespace BASEDDEPARTMENT.Controllers
 				int pageSize = 15;
 
 				var users = _userManager.Users.Where(x => x.UserName!.Contains(searchString))
-																	.OrderBy(x => x.Id)
-																	.Skip((currentPage - 1) * pageSize)
-																	.Take(pageSize).ToList();
+											.OrderBy(x => x.Id)
+											.Skip((currentPage - 1) * pageSize)
+											.Take(pageSize).ToList();
+
 				var roles = _roleManager.Roles.ToList();
 
 				var userRoles = _context.UserRoles.ToList();
@@ -188,6 +190,11 @@ namespace BASEDDEPARTMENT.Controllers
 		[Authorize]
 		public IActionResult ChangeUserName(string userName, string id)
 		{
+			if (id != User.FindFirst(ClaimTypes.NameIdentifier)!.Value)
+			{
+				return RedirectToAction("Index", "Home");
+			}
+
 			var model = new ChangeUserNameViewModel
 			{
 				UserName = userName,
@@ -213,7 +220,7 @@ namespace BASEDDEPARTMENT.Controllers
 				if (await _userManager.FindByNameAsync(model.NewUserName!) == null)
 				{
 					user!.UserName = model.NewUserName;
-					await _userManager.UpdateAsync(user);
+					var res = await _userManager.UpdateAsync(user);
 
 					return RedirectToAction("EditProfile", "Account");
 				}
@@ -228,6 +235,10 @@ namespace BASEDDEPARTMENT.Controllers
 		[Authorize]
 		public IActionResult ChangeUserPassword(string userName, string id)
 		{
+			if (id != User.FindFirst(ClaimTypes.NameIdentifier)!.Value)
+			{
+				return RedirectToAction("Index", "Home");
+			}
 			var model = new ChangeUserPassViewModel
 			{
 				UserName = userName,
@@ -268,6 +279,10 @@ namespace BASEDDEPARTMENT.Controllers
 		[Authorize]
 		public IActionResult AttachUserEmail(string userName, string id)
 		{
+			if (id != User.FindFirst(ClaimTypes.NameIdentifier)!.Value)
+			{
+				return RedirectToAction("Index", "Home");
+			}
 			var model = new AttachUserEmailViewModel
 			{
 				UserName = userName,
@@ -306,6 +321,10 @@ namespace BASEDDEPARTMENT.Controllers
 		[Authorize]
 		public IActionResult ChangeUserEmail(string userName, string id, string email)
 		{
+			if (id != User.FindFirst(ClaimTypes.NameIdentifier)!.Value)
+			{
+				return RedirectToAction("Index", "Home");
+			}
 			var model = new ChangeUserEmailViewModel
 			{
 				Email = email,
@@ -346,6 +365,10 @@ namespace BASEDDEPARTMENT.Controllers
 		[Authorize]
 		public IActionResult CheckEmailChangeToken(string id, string newEmail, string token)
 		{
+			if (id != User.FindFirst(ClaimTypes.NameIdentifier)!.Value)
+			{
+				return RedirectToAction("Index", "Home");
+			}
 			var model = new EmailChangeTokenValidationViewModel
 			{
 				Id = id,
@@ -380,14 +403,22 @@ namespace BASEDDEPARTMENT.Controllers
 		}
 
 		[HttpGet]
-		[Authorize]
-		public async Task<IActionResult> Profile()
+		public async Task<IActionResult> Profile(string userId = "")
 		{
 			if (ModelState.IsValid)
 			{
-				var id = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
-				var user = await _userManager.FindByIdAsync(id);
-				var userVM = new UserProfileViewModel { UserName = user!.UserName, ImgUrl = user!.ImgUrl };
+				if(userId == string.Empty)
+				{
+					userId = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+				}
+				var user = await _userManager.FindByIdAsync(userId);
+				var posts = _context.Posts.Where(x => x.UserId == user!.Id).ToList();
+				var userVM = new UserProfileViewModel {
+					Id = user!.Id,
+					UserName = user!.UserName,
+					ImgUrl = user!.ImgUrl,
+					Posts = posts.Select(x => new PostViewModel { Content = x.Content, CreatedDate = x.CreatedDate, UpdatedDate = x.UpdatedDate, PostId = x.Id}),
+				};
 
 				return View(userVM);
 			}
@@ -407,14 +438,23 @@ namespace BASEDDEPARTMENT.Controllers
         {
 			if (ModelState.IsValid)
 			{
-				var id = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
-				var user = await _userManager.FindByIdAsync(id);
-				user!.ImgUrl = model.ImgUrl;
-				_context.SaveChanges();
+				var request = new HttpClient();
+				try
+				{
+					var result = await request.GetAsync(model.ImgUrl);
+					var id = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+					var user = await _userManager.FindByIdAsync(id);
+					user!.ImgUrl = model.ImgUrl;
+					_context.SaveChanges();
+				}
+				catch (Exception ex)
+				{
+					ModelState.AddModelError(string.Empty, ex.Message);
+					return View();
+				}
             }
 
             return RedirectToAction("Profile", "Account");
         }
-
     }
 }

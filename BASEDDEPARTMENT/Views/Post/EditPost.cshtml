@@ -1,0 +1,57 @@
+﻿@model EditPostViewModel
+
+<div>
+	<form class ="add-content" asp-action="EditPost" asp-controller="Post">
+			<div class="text-danger" asp-validation-summary="ModelOnly"></div>
+			<textarea asp-for="Content" class="add-post" oninput="autoExpand(this)"></textarea>
+			<input type="hidden" name="PostId" value="@Model.PostId"/>
+			<span asp-validation-for="Content" class="text-danger"></span>
+			<button type="submit" class="btn btn-outline-primary" style="margin: 20px 0; max-width: 150px;">Edit Post</button>
+	</form>
+</div>
+
+<style>
+	.add-post {
+		width: 600px;
+		min-height: 120px;
+		border: solid 1px lightgrey;
+		border-radius: 10px;
+		margin-top: 50px;
+		resize: none;
+		overflow: hidden;
+		scrollbar-width: none;
+		-ms-overflow-style: none;
+		scrollbar-color: transparent transparent;
+		scrollbar-width: thin;
+	}
+
+		.add-post:focus {
+			outline: none; /* Remove the default focus outline */
+			border-color: lightgrey; /* Maintain border color */
+		}
+
+	.add-content {
+		align-self: center;
+		font-size: 1rem;
+		font-family: Verdana;
+		text-align: center;
+		display: flex;
+		flex-direction: column;
+	}
+</style>
+<script>
+	function autoExpand(textarea) {
+		// Reset textarea height to auto to ensure it shrinks back if content is removed
+		textarea.style.height = 'auto';
+
+		// Set new height to scrollHeight of the textarea, but limit it to 500px
+		textarea.style.height = Math.min(textarea.scrollHeight, 500) + 'px';
+
+		// If the height exceeds 500px, show the scrollbar
+		if (textarea.scrollHeight > 500) {
+			textarea.style.overflowY = 'auto';
+		} else {
+			textarea.style.overflowY = 'hidden';
+		}
+	}
+</script>

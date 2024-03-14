@@ -7,5 +7,7 @@ namespace BASEDDEPARTMENT
 	{
 		[DataType(DataType.ImageUrl)]
         public string? ImgUrl { get; set; }
+
+        public virtual ICollection<Post>? Posts { get; set; }
     }
 }
