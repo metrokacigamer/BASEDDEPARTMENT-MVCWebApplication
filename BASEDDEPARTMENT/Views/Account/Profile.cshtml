@@ -58,25 +58,7 @@
 					<div class="post-content">
 						@if (isAuthenticated)
 						{	
-							<ul class="navbar-nav custom-navbar">
-								<li class="nav-item dropdown">
-									<a class="nav-link overlay-mini" href="#" id="navbar-dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-										. . .
-									</a>
-									<ul class="dropdown-menu adjusted-navbar" aria-labelledby="navbar-dropdown">
-										<li class="border-bottom-0">
-											<a class="dropdown-item border-bottom" asp-route-postId="@post.PostId" style="padding-bottom: 15px" asp-controller="Post" asp-action="EditPost">
-												Edit
-											</a>
-										</li>
-										<li>
-											<a class="dropdown-item" asp-route-postId="@post.PostId" asp-controller="Post" asp-action="DeletePost">
-												Delete
-											</a>
-										</li>
-									</ul>
-								</li>
-							</ul>
+							@Html.Partial("Profile/_EditDeleteDropDown", post)
 						}
 						<div class="post">
 							@if ((post.UpdatedDate - post.CreatedDate)!.Value.Seconds < 1)
