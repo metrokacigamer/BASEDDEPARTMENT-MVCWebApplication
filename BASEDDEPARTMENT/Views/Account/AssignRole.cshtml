@@ -6,8 +6,6 @@
 	var totalPages = (int)ViewData["TotalPages"];
 }
 
-
-
 <h2>Users</h2>
 <form method="get" action="@Url.Action("AssignRole")">
 	<input type="text" name="searchString" value="@ViewData["SearchString"]"/>
