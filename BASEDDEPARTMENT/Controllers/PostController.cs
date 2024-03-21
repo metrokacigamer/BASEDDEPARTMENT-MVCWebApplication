@@ -1,10 +1,13 @@
-﻿using BASEDDEPARTMENT.EntityModels;
+﻿using BASEDDEPARTMENT.Entities;
 using BASEDDEPARTMENT.Models;
+using BASEDDEPARTMENT.Services.AccountService;
+using BASEDDEPARTMENT.Services.CommentService;
+using BASEDDEPARTMENT.Services.ImageService;
 using BASEDDEPARTMENT.Services.PostService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using System.Security.Claims;
 
 namespace BASEDDEPARTMENT.Controllers
@@ -14,12 +17,18 @@ namespace BASEDDEPARTMENT.Controllers
 		private readonly UserManager<AppUser> _userManager;
 		private readonly MyDBContext _context;
 		private readonly IPostService _postService;
+		private readonly IAccountService _accountService;
+		private readonly IImageService _imageService;
+		private readonly ICommentService _commentService;
 
-		public PostController(UserManager<AppUser> userManager, MyDBContext context, IPostService postService)
+		public PostController(UserManager<AppUser> userManager, MyDBContext context, IPostService postService, IAccountService accountService, IImageService imageService, ICommentService commentService)
 		{
 			_userManager = userManager;
 			_context = context;
 			_postService = postService;
+			_accountService = accountService;
+			_imageService = imageService;
+			_commentService = commentService;
 		}
 
 
@@ -27,35 +36,85 @@ namespace BASEDDEPARTMENT.Controllers
 		public async Task<IActionResult> GetPost(string postId)
 		{
 			var postVM = await _postService.GetPostViewModel(postId);
+			postVM.Comments = await _commentService.GenerateCommentSectionForPost(postId);
+
 			return View(postVM);
 		}
 
-
+		public IImageService Get_imageService()
+		{
+			return _imageService;
+		}
 
 		[HttpPost]
 		[Authorize]
-		public async Task<IActionResult> AddPost(string userId, string postContent)
+		public async Task<IActionResult> AddPost(string userId, string postContent, IFormFile imageFile)
 		{
 			if (ModelState.IsValid)
 			{
-				if(userId != User.FindFirst(ClaimTypes.NameIdentifier)!.Value)
+				if(!_accountService.RequestIsAuthorized(User, userId))
 				{
 					return RedirectToAction("Profile", "Account");
 				}
+			
+				string fileExtension = Path.GetExtension(imageFile.FileName).ToLower();
 
-				var user = await _userManager.FindByIdAsync(userId);
-				await _postService.Create(
-					new Post 
+				if (imageFile != null && imageFile.Length > 0 && !(fileExtension != ".jpg" && fileExtension != ".jpeg" && fileExtension != ".png"))
+				{
+					var fileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
+					var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", fileName);
+
+					using (var stream = new FileStream(imagePath, FileMode.Create))
+					{
+						await imageFile.CopyToAsync(stream);
+					}
+
+					var _user = await _accountService.GetUserAsync(userId);
+
+					var post = new Post
 					{
 						Id = Guid.NewGuid().ToString(),
 						Content = postContent,
 						CreatedDate = DateTime.Now,
 						UpdatedDate = DateTime.Now,
-						User = user,
-					});
+						User = _user,
+					};
 
+					await _postService.Create(post);
+
+					post = await _postService.Get(post.Id);
+
+					var image = new Image
+					{
+						Id = Guid.NewGuid().ToString(),
+						ImageType = Enums.ImageType.PostImage,
+						ImgUrl = imagePath,
+						Post = post,
+						User = _user,
+						UploadDate = DateTime.Now,
+					};
+					
+					await _imageService.AddImage(image);
+
+					return RedirectToAction("GetPost", "Post", new { postId = post.Id });
+				}
+				
+				var user = await _userManager.FindByIdAsync(userId);
+				
+				var _post = new Post 
+				{
+					Id = Guid.NewGuid().ToString(),
+					Content = postContent,
+					CreatedDate = DateTime.Now,
+					UpdatedDate = DateTime.Now,
+					User = user,
+				};
+				
+				await _postService.Create(_post);
+
+				return RedirectToAction("GetPost", "Post", new { postId = _post.Id });
 			}
-			return RedirectToAction("Profile", "Account");
+			return RedirectToAction("Index", "Home");
 		}
 
 		[HttpGet]
@@ -109,6 +168,24 @@ namespace BASEDDEPARTMENT.Controllers
 				await _postService.Delete(post!);
 			}
 			return RedirectToAction("Profile", "Account");
+		}
+
+		[HttpGet]
+		public async Task<IActionResult> GetImage(string imageId)
+		{
+			var image = await _imageService.GetImage(imageId);
+			var imageVM = new ImageViewModel
+			{
+				ImageId = imageId,
+				UploadedDate = image.UploadDate,
+				UserId = image.UserId,
+				UserName = (await _accountService.GetUserAsync(image.UserId)).UserName,
+				ImagePath = image.ImgUrl,
+				ProfileImagePath = (await _accountService.GetUserAsync(image.UserId)).Images
+												.FirstOrDefault(x => x.ImageType == Enums.ImageType.ProfileImage).ImgUrl,
+			};
+
+			return View(imageVM);
 		}
 	}
 }

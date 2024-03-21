@@ -4,9 +4,9 @@ namespace BASEDDEPARTMENT.Models
 {
     public class EditPostViewModel
     {
-        public string? PostId { get; set; }
+        public string PostId { get; set; }
 
         [Required]
-        public string? Content { get; set; }
+        public string Content { get; set; }
     }
 }

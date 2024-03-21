@@ -1,7 +1,8 @@
-﻿using BASEDDEPARTMENT.EntityModels;
+﻿using BASEDDEPARTMENT.Entities;
 using BASEDDEPARTMENT.Repositories;
 using BASEDDEPARTMENT.Services.AccountService;
 using BASEDDEPARTMENT.Services.CommentService;
+using BASEDDEPARTMENT.Services.ImageService;
 using BASEDDEPARTMENT.Services.PostService;
 
 namespace BASEDDEPARTMENT
@@ -17,6 +18,10 @@ namespace BASEDDEPARTMENT
 			services.AddScoped<ICommentService, CommentService>();
 
 			services.AddScoped<IAccountService, AccountService>();
+
+			services.AddScoped<IRepository<Image>, ImageRepository>();
+
+			services.AddScoped<IImageService, ImageService>();
 		}
 	}
 }

@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
-namespace BASEDDEPARTMENT.EntityModels
+namespace BASEDDEPARTMENT.Entities
 {
     public class Post
     {
@@ -22,5 +22,6 @@ namespace BASEDDEPARTMENT.EntityModels
         [Required]
         public virtual AppUser User { get; init; }
 		public virtual ICollection<Comment> Comments { get; set; }
-	}
+        public virtual ICollection<Image> Images { get; set; }
+    }
 }

@@ -1,0 +1,53 @@
+﻿@using System.Security.Claims
+@model CommentViewModel
+@{
+	var isLoggedIn = User.Identity.IsAuthenticated;
+	var authorizedUserId = isLoggedIn ? User.FindFirst(ClaimTypes.NameIdentifier)!.Value : string.Empty;
+}
+
+@if (isLoggedIn)
+{
+	<form class="comment-textarea" style="display: none;" asp-action="AddReply" asp-controller="Comment">
+		<div class="add-reply-content">
+			<input type="hidden" name="parentCommentID" value="@Model.Id" />
+			<input type="hidden" name="userId" value="@authorizedUserId" />
+			<textarea class="add-reply" name="replyContent" placeholder="Reply"></textarea>
+			<button type="submit" class="btn btn-secondary add-reply-button">
+				Add Reply
+			</button>
+		</div>
+	</form>
+}
+
+<style>
+	.add-reply-button {
+		min-width: 120px;
+		height: 54px;
+		margin: 15px 20px 0 10px;
+		border-radius: 27px;
+	}
+
+	.add-reply-content {
+		font-size: 1rem;
+		font-family: Verdana;
+		text-align: center;
+		display: flex;
+		flex-direction: row;
+		margin-bottom: 0;
+	}
+
+	.add-reply {
+		width: 100%;
+		min-height: 30px;
+		border: solid 1px lightgrey;
+		margin-top: 15px;
+		border-radius: 27px;
+		resize: none;
+		overflow: hidden;
+		scrollbar-width: none;
+		-ms-overflow-style: none;
+		scrollbar-color: transparent transparent;
+		scrollbar-width: thin;
+		padding-left: 13px;
+	}
+</style>

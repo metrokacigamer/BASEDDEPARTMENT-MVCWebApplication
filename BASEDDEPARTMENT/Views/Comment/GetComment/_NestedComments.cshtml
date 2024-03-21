@@ -1,0 +1,145 @@
+﻿@using System.Security.Claims
+@model CommentViewModel
+@{
+	var i = (int)(ViewData["Gen"]??0); 
+	var isLoggedIn = User.Identity.IsAuthenticated;
+	var authorizedUserId = isLoggedIn ? User.FindFirst(ClaimTypes.NameIdentifier)!.Value : string.Empty;
+	var defaultSrc = @"~/images/for-view/EEUy6MCU0AErfve.png";
+	var replyImg = @"~/images/for-view/6450615.png";
+}
+<div class="comment-header">
+	@if (i > 0)
+	{
+		<div>
+			<img src="@Url.Content(replyImg)" style="width: 40px; height: 40px; object-fit: scale-down;" />
+		</div>
+	}
+	<div class="comment-author-image">
+		<a asp-action="Profile" asp-controller="Account" asp-route-userId="@Model.UserId">
+			@if (Model.AuthorProfileImage != default)
+			{
+				<img src="@Url.Content(Model.AuthorProfileImage)" class="comment-author-image" />
+			}
+			else
+			{
+				<img src="@Url.Content(defaultSrc)" class="comment-author-image" />
+			}
+		</a>
+	</div>
+	<div class="comment-username-date-content">
+		<div class="comment-username-date">
+			<div class="comment-author-username">
+				<a asp-action="Profile" asp-controller="Account" asp-route-userId="@Model.UserId">
+					@Model.UserName
+				</a>
+			</div>
+			<div class="date">
+				@if ((Model.UpdatedDate - Model.CreatedDate)!.Value.Seconds < 1)
+				{
+					<a asp-action="GetComment" asp-controller="Comment" asp-route-commentId="@Model.Id">
+						posted @Model.CreatedDate
+					</a>
+				}
+				else
+				{
+					<a asp-action="GetComment" asp-controller="Comment" asp-route-commentId="@Model.Id">
+						edited @Model.UpdatedDate
+					</a>
+				}
+			</div>
+		</div>
+		<div class="comment-content">
+			@Model.Content
+		</div>
+		@Html.Partial("GetReply/Profile/_CommentFooter", Model)
+		@if (Model.Replies.DefaultIfEmpty() != default)
+		{
+			foreach(var reply in Model.Replies)
+			{
+				ViewData["Gen"] = i + 1;
+				@Html.Partial("GetComment/_NestedComments", reply, ViewData)
+			}
+		}
+		else if (Model.HasChildComments)
+		{
+			<a asp-action="GetReply" asp-controller="Comment" asp-route-replyId="@Model.Id" asp-route-show="showChild">
+				show more comments
+			</a>
+		}
+		@Html.Partial("GetReply/Profile/_ReplyTextarea", Model)
+
+	</div>
+</div>
+
+<style>
+
+	.comment-content {
+		padding-bottom: 10px;
+	}
+
+	.comment-date a {
+		text-align: right;
+		font-style: unset;
+		font-size: 0.8rem;
+		text-decoration: none;
+		color: slategrey;
+	}
+
+		.comment-date a:hover {
+			text-decoration: underline;
+			color: slategrey;
+		}
+
+	.comment-author-username a {
+		text-decoration: none;
+		color: black;
+	}
+
+		.comment-author-username a:hover {
+			text-decoration: underline;
+			color: red;
+		}
+
+	.comment-author-username {
+		padding-top: 2px;
+		padding-bottom: 4px;
+		margin-right: auto;
+		font-weight: 500;
+	}
+
+	.comment-username-date {
+		display: flex;
+		flex-direction: row;
+	}
+
+	.comment-username-date-content {
+		width: 100%;
+		margin: 0 0 0 5px;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.show-parent-comments {
+	}
+
+	.comment-author-image img {
+		margin-left: 10px;
+		margin-right: 0;
+		width: 40px;
+		height: 40px;
+		object-fit: cover;
+		border-radius: 50%;
+	}
+
+	.comment-author-image-show-more {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.comment-header {
+		padding-top: 6px;
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+	}
+</style>

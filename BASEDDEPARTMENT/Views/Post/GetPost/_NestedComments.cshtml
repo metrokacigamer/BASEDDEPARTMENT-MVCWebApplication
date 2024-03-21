@@ -1,0 +1,86 @@
+﻿@using System.Security.Claims
+@model IEnumerable<CommentViewModel>
+@{
+	var isLoggedIn = User.Identity.IsAuthenticated;
+	var authorizedUserId = isLoggedIn ? User.FindFirst(ClaimTypes.NameIdentifier)!.Value : string.Empty;
+	var defaultSrc = @"~/images/for-view/EEUy6MCU0AErfve.png";
+}
+
+@foreach (var comment in Model)
+{
+	<div class="comment">
+		<div class="comment-header">
+			<div style="display: flex; flex-direction: column;">
+				<a asp-action="Profile" asp-controller="Account" asp-route-userId="@comment.UserId">
+					@if (comment.AuthorProfileImage != default)
+					{
+						<img src="@Url.Content(comment.AuthorProfileImage)" class="comment-author-image" />
+					}
+					else
+					{
+						<img src="@Url.Content(defaultSrc)" class="comment-author-image" />
+					}
+				</a>
+			</div>
+			<div class="comment-username-date-content">
+				<div class="comment-username-date">
+					<div class="comment-author-username">
+						<a asp-action="Profile" asp-controller="Account" asp-route-userId="@comment.UserId">
+							@comment.UserName
+						</a>
+					</div>
+					<div class="date">
+						@if ((comment.UpdatedDate - comment.CreatedDate)!.Value.Seconds < 1)
+						{
+							<a asp-action="GetComment" asp-controller="Comment" asp-route-commentId="@comment.Id">
+								posted @comment.CreatedDate
+							</a>
+						}
+						else
+						{
+							<a asp-action="GetComment" asp-controller="Comment" asp-route-commentId="@comment.Id">
+								edited @comment.UpdatedDate
+							</a>
+						}
+					</div>
+				</div>
+				<div style="margin: 5px 0 0 5px">
+					@comment.Content
+				</div>
+				<div>
+					<div style="display: flex; flex-direction: row; justify-content: space-between;">
+						@if (authorizedUserId == comment.UserId)
+						{
+							@Html.Partial("Profile/_EditDeleteCommentDropDown", comment)
+						}
+						@if (isLoggedIn)
+						{
+							<a href="#" class="reply-link show-comment">
+								Reply
+							</a>
+						}
+					</div>
+					@if (comment.Replies.DefaultIfEmpty() != default)
+					{
+						<div>
+							@Html.Partial("GetPost/_NestedComments", comment.Replies)
+						</div>
+					}
+					@if (isLoggedIn)
+					{
+						<form class="comment-textarea" style="display: none;" asp-action="AddReply" asp-controller="Comment">
+							<div class="add-reply-content">
+								<input type="hidden" name="parentCommentID" value="@comment.Id" />
+								<input type="hidden" name="userId" value="@authorizedUserId" />
+								<textarea class="add-reply" name="replyContent" placeholder="reply"></textarea>
+								<button type="submit" class="btn btn-secondary add-reply-button">
+									Add Reply
+								</button>
+							</div>
+						</form>
+					}
+				</div>
+			</div>
+		</div>
+	</div>
+}

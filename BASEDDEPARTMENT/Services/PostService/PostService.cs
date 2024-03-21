@@ -1,6 +1,7 @@
-﻿using BASEDDEPARTMENT.EntityModels;
+﻿using BASEDDEPARTMENT.Entities;
 using BASEDDEPARTMENT.Models;
 using BASEDDEPARTMENT.Repositories;
+using Microsoft.Extensions.Hosting;
 
 namespace BASEDDEPARTMENT.Services.PostService
 {
@@ -43,6 +44,12 @@ namespace BASEDDEPARTMENT.Services.PostService
 			await Task.CompletedTask;
 		}
 
+		public async Task<string> GetPostAuthorProfileImage(string postId)
+		{
+			var post = await Get(postId);
+			return post.User.Images.FirstOrDefault(x => x.ImageType == Enums.ImageType.ProfileImage)?.ImgUrl;
+		}
+
 		public async Task<PostViewModel> GetPostViewModel(string postId)
 		{
 			var post = _postRepository.Get(postId);
@@ -50,33 +57,11 @@ namespace BASEDDEPARTMENT.Services.PostService
 			{
 				UserId = post.UserId,
 				UserName = post.User.UserName,
-				UserImgUrl = post.User.ImgUrl,
+				UserImgUrl = await GetPostAuthorProfileImage(postId),
 				Content = post.Content,
 				CreatedDate = post.CreatedDate,
 				UpdatedDate = post.UpdatedDate,
 				PostId = post.Id,
-				Comments = post.Comments.Where(d => d.ParentComment == null)
-								.Select(c => new CommentViewModel //need to add Take(N) and Replies
-								{
-									UserName = _context.Users.FirstOrDefault(x => x.Id == c.UserId).UserName,
-									UserId = c.UserId,
-									Id = c.Id,
-									Content = c.Content,
-									AuthorProfileImage = _context.Users.FirstOrDefault(x => x.Id == c.UserId).ImgUrl,
-									CreatedDate = c.CreatedDate,
-									UpdatedDate = c.UpdatedDate,
-									Replies = c.Comments.Select(w => new CommentViewModel
-									{
-										UserName = _context.Users.FirstOrDefault(x => x.Id == w.UserId).UserName,
-										UserId = w.UserId,
-										Id = w.Id,
-										Content = w.Content,
-										AuthorProfileImage = _context.Users.FirstOrDefault(x => x.Id == w.UserId).ImgUrl,
-										CreatedDate = w.CreatedDate,
-										UpdatedDate = w.UpdatedDate,
-									}).OrderByDescending(x => x.CreatedDate),
-								})
-								.OrderByDescending(x => x.CreatedDate),
 			});
 			return postVM;
 		}

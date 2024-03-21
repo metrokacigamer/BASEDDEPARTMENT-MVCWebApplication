@@ -21,5 +21,8 @@ namespace BASEDDEPARTMENT.Models
 		public string AuthorProfileImage { get; set; }
 		public string ParentCommentId { get; set; }
 		public IEnumerable<CommentViewModel> Replies { get; init; }
+		public bool HasChildComments { get; set; }
+		public bool HasParentComments { get; set; }
+		public PostViewModel Post { get; set; }
 	}
 }

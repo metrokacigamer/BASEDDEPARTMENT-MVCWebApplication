@@ -1,5 +1,5 @@
 ﻿
-using BASEDDEPARTMENT.EntityModels;
+using BASEDDEPARTMENT.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace BASEDDEPARTMENT.Repositories

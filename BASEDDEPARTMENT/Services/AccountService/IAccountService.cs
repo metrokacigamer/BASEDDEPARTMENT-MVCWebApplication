@@ -1,4 +1,4 @@
-﻿using BASEDDEPARTMENT.EntityModels;
+﻿using BASEDDEPARTMENT.Entities;
 using BASEDDEPARTMENT.Models;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
@@ -32,7 +32,7 @@ namespace BASEDDEPARTMENT.Services.AccountService
 		Task RemoveFromRoleAsync(AppUser user, string roleName);
 		Task<IdentityResult> SetEmailAsync(AppUser user, string email);
 		Task<IdentityResult> UpdateUserAsync(AppUser user);
-		Task UpdateUserImage(string id, AddImgViewModel model);
+		Task UpdateUserProfileImage(string id, AddImgViewModel model);
 		Task UserSignOutAsync();
 		Task<bool> UserWithSuchNameExists(string userName);
 		bool RequestIsAuthorized(ClaimsPrincipal user, string id);

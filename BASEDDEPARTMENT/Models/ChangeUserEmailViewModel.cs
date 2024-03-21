@@ -6,19 +6,19 @@ namespace BASEDDEPARTMENT.Models
 {
 	public class ChangeUserEmailViewModel
 	{
-		public string? UserName { get; set; }
-		public string? Id { get; set; }
-		public string? Email { get; set; }
+		public string UserName { get; set; }
+		public string Id { get; set; }
+		public string Email { get; set; }
 
 		[Required]
 		[EmailAddress]
 		[DataType(DataType.EmailAddress)]
 		[DisplayName("Enter new Email address")]
-		public string? NewEmail { get; set; }
+		public string NewEmail { get; set; }
 
 		[Required]
 		[DisplayName("Enter your password")]
 		[DataType(DataType.Password)]
-		public string? Password { get; set; }
+		public string Password { get; set; }
     }
 }

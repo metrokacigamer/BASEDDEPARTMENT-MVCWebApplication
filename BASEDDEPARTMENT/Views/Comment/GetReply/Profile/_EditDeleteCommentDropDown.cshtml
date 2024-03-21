@@ -1,0 +1,52 @@
+﻿@model CommentViewModel
+<ul class="navbar-nav comment-custom-navbar">
+	<li class="nav-item dropdown">
+		<a class="nav-link comment-overlay-mini" href="#" id="navbar-dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+			. . .
+		</a>
+		<ul class="dropdown-menu comment-adjusted-navbar" aria-labelledby="navbar-dropdown">
+			<li class="border-bottom-0">
+				<a class="dropdown-item border-bottom" asp-route-userId="@Model.UserId" asp-route-commentId="@Model.Id" style="padding-bottom: 15px" asp-controller="Comment" asp-action="EditComment">
+					Edit
+				</a>
+			</li>
+			<li>
+				<form asp-controller="Comment" asp-action="DeleteComment">
+					<input type="hidden" name="userId" value="@Model.UserId" />
+					<input type="hidden" name="commentId" value="@Model.Id" />
+					<button class="dropdown-item">
+						Delete
+					</button>
+				</form>
+			</li>
+		</ul>
+	</li>
+</ul>
+<style>
+
+	.comment-adjusted-navbar {
+		min-width: 5rem;
+		text-align: center;
+	}
+
+	.comment-overlay-mini {
+		line-height: calc(var(--overlay-size)/8);
+		width: calc(var(--overlay-size)*3/4);
+		height: calc(var(--overlay-size)*3/4);
+		border-radius: 50%;
+		transition: background-color 0.3s;
+		color: black;
+		overflow: hidden;
+	}
+
+	.comment-overlay-mini:hover {
+			background-color: rgba(0, 0, 0, 0.2);
+			color: inherit;
+		}
+
+	.comment-custom-navbar {
+		text-align: center;
+		align-self: center;
+	}
+
+</style>

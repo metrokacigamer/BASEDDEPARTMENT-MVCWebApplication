@@ -1,0 +1,37 @@
+﻿@using System.Security.Claims
+@model CommentViewModel
+@{
+	var isLoggedIn = User.Identity.IsAuthenticated;
+	var authorizedUserId = isLoggedIn ? User.FindFirst(ClaimTypes.NameIdentifier)!.Value : string.Empty;
+	var isAuthenticated = Model.UserId == authorizedUserId;
+}
+<div style="display: flex; flex-direction: row; justify-content: space-between;">
+	@if (isAuthenticated)
+	{
+		@Html.Partial("GetReply/Profile/_EditDeleteCommentDropDown", Model);
+	}
+	@if (isLoggedIn)
+	{
+		<a href="#" id="showTextarea" class="reply-link show-comment">
+			Reply
+		</a>
+	}
+</div>
+
+
+<style>
+	:root {
+		--overlay-size: 40px;
+	}
+
+	.reply-link, .reply-link:hover, .reply-link:active, .reply-link:visited {
+		margin: 0 auto 0 15px;
+		text-decoration: none;
+		color: steelblue;
+	}
+
+</style>
+
+<script>
+
+</script>

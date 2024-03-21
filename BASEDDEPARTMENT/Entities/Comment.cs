@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace BASEDDEPARTMENT.EntityModels
+namespace BASEDDEPARTMENT.Entities
 {
 	public class Comment
 	{
@@ -20,5 +20,6 @@ namespace BASEDDEPARTMENT.EntityModels
 		public virtual Comment ParentComment { get; set; }
 		public string? ParentCommentId { get; set; }
 		public virtual ICollection<Comment> Comments { get; set; }
-	}
+        public virtual ICollection<Image> Images { get; set; }
+    }
 }

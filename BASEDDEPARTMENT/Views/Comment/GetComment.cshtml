@@ -1,0 +1,204 @@
+﻿@using System.Security.Claims
+@model CommentViewModel
+@{
+	var isLoggedIn = User.Identity.IsAuthenticated;
+	var authorizedUserId = isLoggedIn ? User.FindFirst(ClaimTypes.NameIdentifier)!.Value : string.Empty;
+	var isAuthenticated = Model.UserId == authorizedUserId;
+	var defaultSrc = @"~/images/for-view/EEUy6MCU0AErfve.png";
+}
+
+<div class="middle-panel">
+	<div style="display: flex; flex-direction: row; margin-right: var(--overlay-size)">
+		<div class="custom-navbar">
+			@if (Model.Post.UserId == authorizedUserId)
+			{
+				@Html.Partial("GetReply/Profile/_EditDeleteDropDown", Model.Post)
+			}
+		</div>
+		<div class="full-content">
+			<div class="post">
+				<div class="header">
+					<div class="profile-image">
+						<a asp-action="Profile" asp-controller="Account" asp-route-userId="@Model.Post.UserId">
+							@if (Model.Post.UserImgUrl != default)
+							{
+								<img src="@Url.Content(Model.Post.UserImgUrl)" class="post-author-image" />
+							}
+							else
+							{
+								<img src="@Url.Content(defaultSrc)" class="post-author-image" />
+							}
+						</a>
+					</div>
+					<div class="username">
+						<a asp-action="Profile" asp-controller="Account" asp-route-userId="@Model.Post.UserId">
+							@Model.Post.UserName
+						</a>
+					</div>
+					<div class="date">
+						@if ((Model.Post.UpdatedDate - Model.Post.CreatedDate)!.Value.Seconds < 1)
+						{
+							<a asp-action="GetPost" asp-controller="Post" asp-route-postId="@Model.Post.PostId">
+								posted @Model.Post.CreatedDate
+							</a>
+						}
+						else
+						{
+							<a asp-action="GetPost" asp-controller="Post" asp-route-postId="@Model.Post.PostId">
+								edited @Model.Post.UpdatedDate
+							</a>
+						}
+					</div>
+				</div>
+				<div class="content">
+					@Model.Post.Content
+				</div>
+				<div class="dividing-line"></div>
+			</div>
+			<div class="parent-comments">
+				@Html.Partial("GetComment/_NestedComments", Model)
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+	:root {
+		--overlay-size: 40px;
+	}
+
+	.custom-navbar {
+		text-align: center;
+		align-self: center;
+		opacity: 0;
+		transition: opacity 0.3s ease;
+		width: var(--overlay-size);
+	}
+
+		.custom-navbar:hover {
+			opacity: 1;
+			transition: 0.3s ease;
+		}
+
+	.parent-comments {
+		padding-right: 5px;
+		padding-bottom: 5px;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.dividing-line {
+		height: 0;
+		border-bottom: solid 1px white;
+		margin-bottom: 3px;
+	}
+
+	.content {
+		padding-left: 10px;
+		min-height: 50px;
+		word-wrap: break-word;
+	}
+
+	.date a {
+		margin-right: 0;
+		margin-left: auto;
+		font-style: unset;
+		font-size: 0.8rem;
+		text-decoration: none;
+		color: slategrey;
+	}
+
+		.date a:hover {
+			text-decoration: underline;
+			color: slategrey;
+		}
+
+	.username a {
+		text-decoration: none;
+		color: black;
+	}
+
+		.username a:hover {
+			text-decoration: underline;
+			color: red;
+		}
+
+	.username {
+		padding-top: 2px;
+		padding-bottom: 4px;
+		margin-right: auto;
+		font-weight: 500;
+	}
+
+	.profile-image img {
+		margin: 5px;
+		width: 50px;
+		height: 50px;
+		object-fit: cover;
+		border-radius: 50%;
+	}
+
+	.header {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+	}
+
+	.post {
+		padding: 1px 3px 3px 5px;
+	}
+
+	.full-content {
+		width: 600px;
+		border: solid 1px lightgrey;
+		border-radius: 10px;
+		display: flex;
+		flex-direction: column;
+		background-color: lightgray;
+		margin-left: 3px;
+	}
+
+	.middle-panel {
+		margin-top: 5%;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+</style>
+<script>
+	const replyLinks = document.querySelectorAll('.show-comment');
+
+	// Attach click event listener to each "Reply" link
+	replyLinks.forEach(link => {
+		link.addEventListener('click', function (event) {
+			event.preventDefault(); // Prevent the default link behavior
+
+			// Toggle visibility of the associated textarea
+			// const textarea = this.parentNode.parentNode.querySelector('.comment-textarea');
+			const parentCommentDiv = this.parentNode;
+			let siblingElement = parentCommentDiv.nextElementSibling;
+			while (siblingElement) {
+				// Check if the sibling element has the class .comment-textarea
+				if (siblingElement.classList.contains('comment-textarea')) {
+					// Toggle the display of the textarea
+					siblingElement.style.display = siblingElement.style.display === 'none' ? 'block' : 'none';
+					break; // Stop the loop once the textarea is found
+				}
+				// Move to the next sibling element
+				siblingElement = siblingElement.nextElementSibling;
+			}
+		});
+	});
+
+	function autoExpand(textarea) {
+		textarea.style.height = 'auto';
+
+		textarea.style.height = Math.min(textarea.scrollHeight, 500) + 'px';
+
+		if (textarea.scrollHeight > 500) {
+			textarea.style.overflowY = 'auto';
+		} else {
+			textarea.style.overflowY = 'hidden';
+		}
+	}
+</script>

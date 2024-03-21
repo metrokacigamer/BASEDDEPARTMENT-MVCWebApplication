@@ -1,0 +1,41 @@
+﻿@model PostViewModel
+<ul class="navbar-nav">
+	<li class="nav-item dropdown">
+		<a class="nav-link overlay-mini" href="#" id="navbar-dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+			. . .
+		</a>
+		<ul class="dropdown-menu adjusted-navbar" aria-labelledby="navbar-dropdown">
+			<li class="border-bottom-0">
+				<a class="dropdown-item border-bottom" asp-route-postId="@Model.PostId" style="padding-bottom: 15px" asp-controller="Post" asp-action="EditPost">
+					Edit
+				</a>
+			</li>
+			<li>
+			<a class="dropdown-item" asp-route-postId="@Model.PostId" asp-controller="Post" asp-action="DeletePost">
+					Delete
+				</a>
+			</li>
+		</ul>
+	</li>
+</ul>
+
+<style>
+	.adjusted-navbar {
+		min-width: 5rem;
+		text-align: center;
+	}	
+
+	.overlay-mini {
+		line-height: calc(var(--overlay-size) * 40/100);
+		width: var(--overlay-size);
+		height: var(--overlay-size);
+		border-radius: 50%;
+		transition: background-color 0.3s;
+		color: black;
+		overflow: hidden;
+	}
+
+		.overlay-mini:hover {
+			background-color: rgba(0, 0, 0, 0.2); /* Change background color on hover */
+		}
+</style>

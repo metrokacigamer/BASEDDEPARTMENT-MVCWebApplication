@@ -25,7 +25,7 @@ namespace BASEDDEPARTMENT.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("BASEDDEPARTMENT.EntityModels.AppUser", b =>
+            modelBuilder.Entity("BASEDDEPARTMENT.Entities.AppUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -43,9 +43,6 @@ namespace BASEDDEPARTMENT.Migrations
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
-
-                    b.Property<string>("ImgUrl")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
@@ -93,7 +90,7 @@ namespace BASEDDEPARTMENT.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("BASEDDEPARTMENT.EntityModels.Comment", b =>
+            modelBuilder.Entity("BASEDDEPARTMENT.Entities.Comment", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -129,7 +126,47 @@ namespace BASEDDEPARTMENT.Migrations
                     b.ToTable("Comments");
                 });
 
-            modelBuilder.Entity("BASEDDEPARTMENT.EntityModels.Post", b =>
+            modelBuilder.Entity("BASEDDEPARTMENT.Entities.Image", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CommentId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("ImageType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ImgUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PostId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("UploadDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CommentId");
+
+                    b.HasIndex("PostId");
+
+                    b.HasIndex("UserId", "CommentId")
+                        .HasFilter("[CommentId] IS NOT NULL AND [PostId] IS NOT NULL");
+
+                    b.HasIndex("UserId", "PostId")
+                        .HasFilter("[PostId] IS NOT NULL AND [CommentId] IS NOT NULL");
+
+                    b.ToTable("Images");
+                });
+
+            modelBuilder.Entity("BASEDDEPARTMENT.Entities.Post", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -287,20 +324,20 @@ namespace BASEDDEPARTMENT.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("BASEDDEPARTMENT.EntityModels.Comment", b =>
+            modelBuilder.Entity("BASEDDEPARTMENT.Entities.Comment", b =>
                 {
-                    b.HasOne("BASEDDEPARTMENT.EntityModels.Comment", "ParentComment")
+                    b.HasOne("BASEDDEPARTMENT.Entities.Comment", "ParentComment")
                         .WithMany("Comments")
                         .HasForeignKey("ParentCommentId")
                         .OnDelete(DeleteBehavior.ClientCascade);
 
-                    b.HasOne("BASEDDEPARTMENT.EntityModels.Post", "Post")
+                    b.HasOne("BASEDDEPARTMENT.Entities.Post", "Post")
                         .WithMany("Comments")
                         .HasForeignKey("PostId")
                         .OnDelete(DeleteBehavior.ClientCascade)
                         .IsRequired();
 
-                    b.HasOne("BASEDDEPARTMENT.EntityModels.AppUser", "User")
+                    b.HasOne("BASEDDEPARTMENT.Entities.AppUser", "User")
                         .WithMany("Comments")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.ClientCascade)
@@ -313,9 +350,34 @@ namespace BASEDDEPARTMENT.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BASEDDEPARTMENT.EntityModels.Post", b =>
+            modelBuilder.Entity("BASEDDEPARTMENT.Entities.Image", b =>
                 {
-                    b.HasOne("BASEDDEPARTMENT.EntityModels.AppUser", "User")
+                    b.HasOne("BASEDDEPARTMENT.Entities.Comment", "Comment")
+                        .WithMany("Images")
+                        .HasForeignKey("CommentId")
+                        .OnDelete(DeleteBehavior.ClientCascade);
+
+                    b.HasOne("BASEDDEPARTMENT.Entities.Post", "Post")
+                        .WithMany("Images")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.ClientCascade);
+
+                    b.HasOne("BASEDDEPARTMENT.Entities.AppUser", "User")
+                        .WithMany("Images")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.ClientCascade)
+                        .IsRequired();
+
+                    b.Navigation("Comment");
+
+                    b.Navigation("Post");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BASEDDEPARTMENT.Entities.Post", b =>
+                {
+                    b.HasOne("BASEDDEPARTMENT.Entities.AppUser", "User")
                         .WithMany("Posts")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -335,7 +397,7 @@ namespace BASEDDEPARTMENT.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("BASEDDEPARTMENT.EntityModels.AppUser", null)
+                    b.HasOne("BASEDDEPARTMENT.Entities.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -344,7 +406,7 @@ namespace BASEDDEPARTMENT.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("BASEDDEPARTMENT.EntityModels.AppUser", null)
+                    b.HasOne("BASEDDEPARTMENT.Entities.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -359,7 +421,7 @@ namespace BASEDDEPARTMENT.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BASEDDEPARTMENT.EntityModels.AppUser", null)
+                    b.HasOne("BASEDDEPARTMENT.Entities.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -368,28 +430,34 @@ namespace BASEDDEPARTMENT.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("BASEDDEPARTMENT.EntityModels.AppUser", null)
+                    b.HasOne("BASEDDEPARTMENT.Entities.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("BASEDDEPARTMENT.EntityModels.AppUser", b =>
+            modelBuilder.Entity("BASEDDEPARTMENT.Entities.AppUser", b =>
                 {
                     b.Navigation("Comments");
+
+                    b.Navigation("Images");
 
                     b.Navigation("Posts");
                 });
 
-            modelBuilder.Entity("BASEDDEPARTMENT.EntityModels.Comment", b =>
+            modelBuilder.Entity("BASEDDEPARTMENT.Entities.Comment", b =>
                 {
                     b.Navigation("Comments");
+
+                    b.Navigation("Images");
                 });
 
-            modelBuilder.Entity("BASEDDEPARTMENT.EntityModels.Post", b =>
+            modelBuilder.Entity("BASEDDEPARTMENT.Entities.Post", b =>
                 {
                     b.Navigation("Comments");
+
+                    b.Navigation("Images");
                 });
 #pragma warning restore 612, 618
         }

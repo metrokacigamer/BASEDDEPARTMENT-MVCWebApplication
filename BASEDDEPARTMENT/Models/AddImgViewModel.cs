@@ -8,6 +8,6 @@ namespace BASEDDEPARTMENT.Models
         [Required]
         [DataType(DataType.ImageUrl)]
         [DisplayName("Upload Image URL here")]
-        public string? ImgUrl { get; set; }
+        public string ImgUrl { get; set; }
     }
 }

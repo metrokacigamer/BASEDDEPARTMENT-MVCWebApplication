@@ -1,7 +1,4 @@
-using BASEDDEPARTMENT.EntityModels;
-using BASEDDEPARTMENT.Repositories;
-using BASEDDEPARTMENT.Services.AccountService;
-using BASEDDEPARTMENT.Services.PostService;
+using BASEDDEPARTMENT.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 

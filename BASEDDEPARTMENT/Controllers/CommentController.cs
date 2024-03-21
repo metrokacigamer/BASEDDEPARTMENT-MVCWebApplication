@@ -1,10 +1,12 @@
-﻿using BASEDDEPARTMENT.EntityModels;
+﻿using BASEDDEPARTMENT.Entities;
+using BASEDDEPARTMENT.Models;
 using BASEDDEPARTMENT.Services.AccountService;
 using BASEDDEPARTMENT.Services.CommentService;
 using BASEDDEPARTMENT.Services.PostService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.Design;
 
 namespace BASEDDEPARTMENT.Controllers
 {
@@ -20,6 +22,32 @@ namespace BASEDDEPARTMENT.Controllers
 			_postService = postService;
 			_accountService = accountService;
 			_commentService = commentService;
+		}
+
+		[HttpGet]
+		public async Task<IActionResult> GetReply(string replyId, string show = "showParent")
+		{
+			if(show == "showParent")
+			{
+				var commentVM = await _commentService.GetReplyViewModel(replyId);
+
+				return View(commentVM);
+			}
+			else
+			{
+				var commentVM = await _commentService.GetViewModel(replyId);
+
+				return RedirectToAction("GetComment", "Comment", new { commentId = replyId });
+			}
+		}
+
+
+		[HttpGet]
+		public async Task<IActionResult> GetComment(string commentId)
+		{
+			var commentVM = await _commentService.GetViewModel(commentId); 
+
+			return View(commentVM);
 		}
 
 		[HttpPost]
@@ -39,7 +67,7 @@ namespace BASEDDEPARTMENT.Controllers
 
 			_commentService.Create(newComment);
 
-			return RedirectToAction("Profile", "Account", new {userId = post.UserId});
+			return RedirectToAction("GetPost", "Post", new {postId = post.Id});
 		}
 
 		[HttpGet]
@@ -85,7 +113,7 @@ namespace BASEDDEPARTMENT.Controllers
 
 			_commentService.Create(newComment);
 
-			return RedirectToAction("Profile", "Account", new { userId = post.UserId });
+			return RedirectToAction("GetPost", "Post", new { postId = post.Id });
 		}
 	}
 }

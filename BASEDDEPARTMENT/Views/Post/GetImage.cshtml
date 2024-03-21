@@ -1,0 +1,69 @@
+﻿@using System.Security.Claims
+@model ImageViewModel
+@{
+	var isLoggedIn = User.Identity.IsAuthenticated;
+	var defaultSrc = @"~/images/for-view/EEUy6MCU0AErfve.png";
+	var authorizedUserId = isLoggedIn ? User.FindFirst(ClaimTypes.NameIdentifier)!.Value : string.Empty;
+}
+<div class="middle-panel">
+	<div class="image-container">
+		<div class="profile-username-date">
+			<div class="author-profile-image">
+			</div>
+
+			<div class="username">
+				@Model.UserName
+			</div>
+			<div class="date">
+				<a>uploaded @Model.UploadedDate</a>
+			</div>
+		</div>
+
+		<div class="image">
+			<img src="@Url.Content(Model.ImagePath)" />
+		</div>
+
+	</div>
+</div>
+
+<style>
+	.username-date {
+		display: flex;
+		flex-direction: row;
+	}
+
+	.image-container {
+		width: 600px;
+		padding: 5px;
+		border: solid 1px lightgrey;
+		border-radius: 10px;
+		background: grey;
+	}
+
+	.middle-panel {
+		align-items: center;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-evenly;
+	}
+
+	.image img {
+		max-height: 1200px;
+		width: inherit;
+		object-fit: cover;
+	}
+
+	.date a {
+		text-align: right;
+		font-style: unset;
+		font-size: 0.8rem;
+		text-decoration: none;
+		color: slategrey;
+	}
+
+		.date a:hover {
+			text-decoration: underline;
+			color: slategrey;
+		}
+
+</style>

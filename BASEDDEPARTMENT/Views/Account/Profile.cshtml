@@ -4,14 +4,15 @@
 	var isLoggedIn = User.Identity.IsAuthenticated;
 	var authorizedUserId = isLoggedIn ? User.FindFirst(ClaimTypes.NameIdentifier)!.Value : string.Empty;
 	var isAuthenticated = Model.Id == authorizedUserId;
-	var defaultSrc = @"~/images/EEUy6MCU0AErfve.png";
+	var defaultSrc = @"~/images/for-view/EEUy6MCU0AErfve.png";
 }
+
 <div class="full-content ">
 	<div class="middle-panel">
 		<div style="position: relative; display: flex; align-items: center;">
 			<div style="position: relative; overflow: hidden;">
 				<div class="image-container">
-					@if (Model.ImgUrl != default)
+					@if (Model.ImgUrl != null)
 					{
 						<img class="image" src="@Model.ImgUrl" />
 					}
@@ -38,8 +39,22 @@
 
 		@if (isAuthenticated)
 		{
-			<form class="add-content" asp-action="AddPost" asp-controller="Post" method="post">
-				<textarea name="postContent" class="add-post" placeholder="Give us an update or something!" oninput="autoExpand(this)"></textarea>
+			<form class="add-content" asp-action="AddPost" asp-controller="Post" method="post" enctype="multipart/form-data">
+				<div class="add-post-full">
+
+					<textarea name="postContent" class="add-post" placeholder="Give us an update or something!" oninput="autoExpand(this)"></textarea>
+					<div class="uploaded-image">
+						<img src="#" class="uploaded-img" id="post-selected-image" alt="Selected Image" />
+					</div>
+					<div class="add-post-footer">
+						<div class="upload-image">
+							<a href="#" id="post-img-click" style="text-decoration: none;">
+								<img src="@Url.Content(@"~/images/for-view/camera-circle.png")" class="image-input" />
+							</a>
+						</div>
+					</div>
+				</div>
+				<input class="input-file" type="file" id="post-file-input" onchange="displaySelectedImage(this)" name="imageFile" />
 				<input type="hidden" name="userId" value="@Model.Id" />
 				<button type="submit" class="btn btn-outline-primary" style="margin: 20px 0; max-width: 150px;">Add Post</button>
 			</form>
@@ -71,7 +86,7 @@
 										<a asp-action="Profile" asp-controller="Account" asp-route-userId="@Model.Id">
 											@if (Model.ImgUrl != default)
 											{
-												<img src="@Model.ImgUrl" class="post-author-image" />
+												<img src="@post.UserImgUrl" class="post-author-image" />
 											}
 											else
 											{
@@ -98,6 +113,43 @@
 								<div>
 									@post.Content
 								</div>
+								@if (post.Images.DefaultIfEmpty() != default)
+								{
+									<div class="carousel slide" id="postImageCarousel" data-bs-wrap="false">
+										<div class="carousel-inner images">
+											@foreach (var image in post.Images)
+											{
+												if (image.ImageId == post.Images.First().ImageId)
+												{
+													<div class="carousel-item active">
+														<img src="@Url.Content(image.ImagePath)" />
+													</div>
+												}
+												else
+												{
+													<div class="carousel-item">
+														<img src="@image.ImagePath" />
+													</div>
+												}
+											}
+										</div>
+										@if (post.Images.Count() > 1)
+										{
+											<button class="carousel-control-prev" 
+											type="button" 
+											data-bs-target="#postImageCarousel"
+											data-bs-slide="prev">
+												<span class="carousel-control-prev-icon"></span>
+											</button>
+											<button class="carousel-control-next"
+													type="button"
+													data-bs-target="#postImageCarousel"
+													data-bs-slide="next">
+												<span class="carousel-control-next-icon"></span>
+											</button>
+										}
+									</div>
+								}
 							</div>
 
 							<div class="dividing-line"></div>
@@ -128,13 +180,13 @@
 													<div class="date">
 														@if ((comment.UpdatedDate - comment.CreatedDate)!.Value.Seconds < 1)
 														{
-															<a asp-action="GetComment" asp-controller="Comment" asp-route-postId="@comment.Id">
+															<a asp-action="GetComment" asp-controller="Comment" asp-route-commentId="@comment.Id">
 																posted @comment.CreatedDate
 															</a>
 														}
 														else
 														{
-															<a asp-action="GetComment" asp-controller="Comment" asp-route-postId="@comment.Id">
+															<a asp-action="GetComment" asp-controller="Comment" asp-route-commentId="@comment.Id">
 																edited @comment.UpdatedDate
 															</a>
 														}
@@ -151,7 +203,7 @@
 														}
 														@if (isLoggedIn)
 														{
-															<a href="#" id="showTextarea" class="reply-link">
+															<a href="#" id="showTextarea" class="reply-link show-comment">
 																Reply
 															</a>
 														}
@@ -183,13 +235,13 @@
 																			<div class="date">
 																				@if ((reply.UpdatedDate - reply.CreatedDate)!.Value.Seconds < 1)
 																				{
-																					<a asp-action="GetComment" asp-controller="Comment" asp-route-postId="@reply.Id">
+																					<a asp-action="GetReply" asp-controller="Comment" asp-route-replyId="@reply.Id" >
 																						posted @reply.CreatedDate
 																					</a>
 																				}
 																				else
 																				{
-																					<a asp-action="GetReply" asp-controller="Comment" asp-route-postId="@reply.Id">
+																					<a asp-action="GetReply" asp-controller="Comment" asp-route-replyId="@reply.Id">
 																						edited @reply.UpdatedDate
 																					</a>
 																				}
@@ -213,16 +265,14 @@
 													</div>
 													@if (isLoggedIn)
 													{
-														<form asp-action="AddReply" asp-controller="Comment">
-															<div id="textarea" style="display: none;">
-																<div class="add-reply-content">
-																	<input type="hidden" name="parentCommentID" value="@comment.Id" />
-																	<input type="hidden" name="userId" value="@authorizedUserId" />
-																	<textarea class="add-reply" name="replyContent" placeholder="reply"></textarea>
-																	<button type="submit" class="btn btn-secondary add-reply-button">
-																		Add Reply
-																	</button>
-																</div>
+														<form class="comment-textarea" style="display: none;" asp-action="AddReply" asp-controller="Comment">
+															<div class="add-reply-content">
+																<input type="hidden" name="parentCommentID" value="@comment.Id" />
+																<input type="hidden" name="userId" value="@authorizedUserId" />
+																<textarea class="add-reply" name="replyContent" placeholder="reply"></textarea>
+																<button type="submit" class="btn btn-secondary add-reply-button">
+																	Add Reply
+																</button>
 															</div>
 														</form>
 													}
@@ -248,9 +298,73 @@
 		</div>
 	</div>
 </div>
-
-
 <style>
+	.images .carousel-item img {
+		width: 100%;
+		max-height: 600px;
+		object-fit: scale-down;
+	}
+
+	.uploaded-img {
+		margin-left: 10px;
+		display: none;
+		width: 100px;
+		height: 100px;
+		object-fit: cover;
+		border-radius: 5px;
+	}
+
+	.uploaded-image {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		border-left: solid 1px lightgrey;
+		border-right: solid 1px lightgrey;
+	}
+
+	.image-input {
+		height: 38px;
+		width: 38px;
+		object-fit: cover;
+		margin-left: 3px;
+	}
+
+	.input-file {
+		visibility: hidden;
+	}
+
+	.add-post-full {
+		width: 600px;
+		margin-top: 50px;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+	}
+
+	.add-post {
+		width: inherit;
+		min-height: 120px;
+		border: solid 1px lightgrey;
+		border-radius: 10px 10px 0 0;
+		border-bottom: none;
+		resize: none;
+		overflow: hidden;
+		scrollbar-width: none;
+		-ms-overflow-style: none;
+		scrollbar-color: transparent transparent;
+		scrollbar-width: thin;
+	}
+
+	.add-post-footer {
+		border: solid 1px lightgrey;
+		border-radius: 0 0 10px 10px;
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		height: 40px;
+	}
+
+
 	.add-reply {
 		width: 100%;
 		min-height: 30px;
@@ -279,10 +393,6 @@
 		min-width: 120px;
 		height: 54px;
 		margin: 15px 20px 0 10px;
-		/* 		margin-top: 15px;
-			margin-bottom: 0;
-			margin-left: 10px;
-			margin-right: 20px; */
 		border-radius: 27px;
 	}
 
@@ -375,7 +485,7 @@
 	}
 
 	:root {
-		--overlay-size: 40px; /* Define the default size */
+		--overlay-size: 40px; 
 	}
 
 	.comment-button {
@@ -471,20 +581,6 @@
 
 	.content {
 		align-self: center;
-	}
-
-	.add-post {
-		width: 600px;
-		min-height: 120px;
-		border: solid 1px lightgrey;
-		border-radius: 10px;
-		margin-top: 50px;
-		resize: none;
-		overflow: hidden;
-		scrollbar-width: none;
-		-ms-overflow-style: none;
-		scrollbar-color: transparent transparent;
-		scrollbar-width: thin;
 	}
 
 	.add-comment {
@@ -583,10 +679,44 @@
 		height: 200px;
 		object-fit: cover;
 	}
+
 </style>
 <script>
-	document.getElementById('showTextarea').addEventListener('click', function () {
-		document.getElementById('textarea').style.display = 'block';
+
+	document.getElementById("post-img-click").addEventListener("click", function () {
+		document.getElementById("post-file-input").click();
+	});
+
+	document.getElementById("post-file-input").addEventListener("change", function (event) {
+		const file = event.target.files[0];
+		if (file) {
+			const reader = new FileReader();
+			reader.onload = function (e) {
+				const img = document.getElementById("post-selected-image");
+				img.src = e.target.result;
+				img.style.display = "inline";
+			};
+			reader.readAsDataURL(file);
+		}
+	});
+
+	document.getElementById("post-selected-image").addEventListener("click", function () {
+
+		document.getElementById("post-file-input").value = "";
+		this.style.display = "none";
+	});
+
+	const replyLinks = document.querySelectorAll('.show-comment');
+
+	// Attach click event listener to each "Reply" link
+	replyLinks.forEach(link => {
+		link.addEventListener('click', function (event) {
+			event.preventDefault(); // Prevent the default link behavior
+
+			// Toggle visibility of the associated textarea
+			const textarea = this.parentNode.parentNode.querySelector('.comment-textarea');
+			textarea.style.display = textarea.style.display === 'none' ? 'block' : 'none';
+		});
 	});
 
 	function autoExpand(textarea) {

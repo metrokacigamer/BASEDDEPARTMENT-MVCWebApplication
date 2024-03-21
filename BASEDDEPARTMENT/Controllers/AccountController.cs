@@ -1,4 +1,4 @@
-﻿using BASEDDEPARTMENT.EntityModels;
+﻿using BASEDDEPARTMENT.Entities;
 using BASEDDEPARTMENT.Models;
 using BASEDDEPARTMENT.Services.AccountService;
 using Microsoft.AspNetCore.Authorization;
@@ -434,7 +434,7 @@ namespace BASEDDEPARTMENT.Controllers
 			{
 				try
 				{
-					await _accountService.UpdateUserImage(_accountService.GetIdOfAuthorizedUser(User), model);
+					await _accountService.UpdateUserProfileImage(_accountService.GetIdOfAuthorizedUser(User), model);
 				}
 				catch (Exception ex)
 				{
