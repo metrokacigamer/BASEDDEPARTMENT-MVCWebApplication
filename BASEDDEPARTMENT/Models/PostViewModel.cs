@@ -7,7 +7,7 @@ namespace BASEDDEPARTMENT.Models
 		public string UserId {  get; set; }
 		public string UserName { get; set; }
 		public string PostId { get; set; }
-		[Required]
+        [Required]
 		public string Content { get; set; }
 		[Required]
 		[DataType(DataType.DateTime)]
@@ -18,6 +18,7 @@ namespace BASEDDEPARTMENT.Models
 		[DataType(DataType.DateTime)]
 		public DateTime? UpdatedDate { get; set; }
 
-		public IEnumerable<CommentViewModel> Comments { get; init; }
+		public IEnumerable<CommentViewModel> Comments { get; set; }
+		public IEnumerable<ImageViewModel> Images { get; set; }
 	}
 }

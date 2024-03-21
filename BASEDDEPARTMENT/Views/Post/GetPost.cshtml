@@ -4,12 +4,11 @@
 	var isLoggedIn = User.Identity.IsAuthenticated;
 	var authorizedUserId = isLoggedIn ? User.FindFirst(ClaimTypes.NameIdentifier)!.Value : string.Empty;
 	var isAuthenticated = Model.UserId == authorizedUserId;
-	var defaultSrc = @"~/images/EEUy6MCU0AErfve.png";
+	var defaultSrc = @"~/images/for-view/EEUy6MCU0AErfve.png";
 }
 <div class="middle-panel">
 	<div style="margin-top: 5%;" class="content">
 		<div class="content-display">
-
 			@if (isAuthenticated)
 			{
 				@Html.Partial("Profile/_EditDeleteDropDown", Model)
@@ -52,136 +51,9 @@
 
 				<div class="dividing-line"></div>
 				<div class="comments">
-					@foreach (var comment in Model.Comments)
-					{
-						<div class="comment">
-							<div class="comment-header">
-								<div style="display: flex; flex-direction: column;">
-
-									<a asp-action="Profile" asp-controller="Account" asp-route-userId="@comment.UserId">
-										@if (comment.AuthorProfileImage != default)
-										{
-											<img src="@Url.Content(comment.AuthorProfileImage)" class="comment-author-image" />
-										}
-										else
-										{
-											<img src="@Url.Content(defaultSrc)" class="comment-author-image" />
-										}
-									</a>
-								</div>
-								<div class="comment-username-date-content">
-									<div class="comment-username-date">
-										<div class="comment-author-username">
-											<a asp-action="Profile" asp-controller="Account" asp-route-userId="@comment.UserId">
-												@comment.UserName
-											</a>
-										</div>
-										<div class="date">
-											@if ((comment.UpdatedDate - comment.CreatedDate)!.Value.Seconds < 1)
-											{
-												<a asp-action="GetComment" asp-controller="Comment" asp-route-postId="@comment.Id">
-													posted @comment.CreatedDate
-												</a>
-											}
-											else
-											{
-												<a asp-action="GetComment" asp-controller="Comment" asp-route-postId="@comment.Id">
-													edited @comment.UpdatedDate
-												</a>
-											}
-										</div>
-									</div>
-									<div style="margin: 5px 0 0 5px">
-										@comment.Content
-									</div>
-									<div>
-										<div style="display: flex; flex-direction: row; justify-content: space-between;">
-											@if (authorizedUserId == comment.UserId)
-											{
-												@Html.Partial("Profile/_EditDeleteCommentDropDown", comment)
-											}
-											@if (isLoggedIn)
-											{
-												<a href="#" id="showTextarea" class="reply-link">
-													Reply
-												</a>
-											}
-										</div>
-										<div>
-											@foreach (var reply in comment.Replies)
-											{
-												<div class="comment">
-													<div class="comment-header">
-														<div style="display: flex; flex-direction: column;">
-
-															<a asp-action="Profile" asp-controller="Account" asp-route-userId="@reply.UserId">
-																@if (comment.AuthorProfileImage != default)
-																{
-																	<img src="@Url.Content(reply.AuthorProfileImage)" class="comment-author-image" />
-																}
-																else
-																{
-																	<img src="@Url.Content(defaultSrc)" class="comment-author-image" />
-																}
-															</a>
-														</div>
-														<div class="comment-username-date-content">
-															<div class="comment-username-date">
-																<div class="comment-author-username">
-																	<a asp-action="Profile" asp-controller="Account" asp-route-userId="@reply.UserId">
-																		@reply.UserName
-																	</a>
-																</div>
-																<div class="date">
-																	@if ((reply.UpdatedDate - reply.CreatedDate)!.Value.Seconds < 1)
-																	{
-																		<a asp-action="GetComment" asp-controller="Comment" asp-route-postId="@reply.Id">
-																			posted @reply.CreatedDate
-																		</a>
-																	}
-																	else
-																	{
-																		<a asp-action="GetReply" asp-controller="Comment" asp-route-postId="@reply.Id">
-																			edited @reply.UpdatedDate
-																		</a>
-																	}
-																</div>
-															</div>
-															<div style="margin: 5px 0 0 5px">
-																@reply.Content
-															</div>
-															<div>
-																<div style="display: flex; flex-direction: row; justify-content: space-between;">
-																	@if (authorizedUserId == reply.UserId)
-																	{
-																		@Html.Partial("Profile/_EditDeleteCommentDropDown", reply)
-																	}
-																</div>
-															</div>
-														</div>
-													</div>
-												</div>
-											}
-										</div>
-										@if (isLoggedIn)
-										{
-											<form asp-action="AddReply" asp-controller="Comment">
-												<div id="textarea" style="display: none;">
-													<div class="add-reply-content">
-														<input type="hidden" name="parentCommentID" value="@comment.Id" />
-														<input type="hidden" name="userId" value="@authorizedUserId" />
-														<textarea class="add-reply" name="replyContent" placeholder="reply"></textarea>
-														<button type="submit" class="btn btn-secondary add-reply-button">
-															Add Reply
-														</button>
-													</div>
-												</div>
-											</form>
-										}
-									</div>
-								</div>
-							</div>
-						</div>
+					@if (Model.Comments.DefaultIfEmpty() != default)
+					{	
+						@Html.Partial("GetPost/_NestedComments", Model.Comments)
 					}
 				</div>
 				@if (isLoggedIn)
@@ -313,9 +185,8 @@
 	}
 
 	.dividing-line {
-		border: solid 1px;
+		border-bottom: solid 1px white;
 		height: 1px;
-		border-color: white;
 	}
 
 	:root {
@@ -410,6 +281,7 @@
 
 	.content {
 		align-self: center;
+		margin-right: var(--overlay-size);
 	}
 
 	.add-comment {
@@ -441,8 +313,28 @@
 </style>
 
 <script>
-	document.getElementById('showTextarea').addEventListener('click', function () {
-		document.getElementById('textarea').style.display = 'block';
+	const replyLinks = document.querySelectorAll('.show-comment');
+
+	// Attach click event listener to each "Reply" link
+	replyLinks.forEach(link => {
+		link.addEventListener('click', function (event) {
+			event.preventDefault(); // Prevent the default link behavior
+
+			// Toggle visibility of the associated textarea
+			// const textarea = this.parentNode.parentNode.querySelector('.comment-textarea');
+			const parentCommentDiv = this.parentNode;
+			let siblingElement = parentCommentDiv.nextElementSibling;
+			while (siblingElement) {
+				// Check if the sibling element has the class .comment-textarea
+				if (siblingElement.classList.contains('comment-textarea')) {
+					// Toggle the display of the textarea
+					siblingElement.style.display = siblingElement.style.display === 'none' ? 'block' : 'none';
+					break; // Stop the loop once the textarea is found
+				}
+				// Move to the next sibling element
+				siblingElement = siblingElement.nextElementSibling;
+			}
+		});
 	});
 
 	function autoExpand(textarea) {

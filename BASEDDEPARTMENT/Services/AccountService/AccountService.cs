@@ -1,8 +1,9 @@
-﻿using BASEDDEPARTMENT.EntityModels;
+﻿using BASEDDEPARTMENT.Entities;
 using BASEDDEPARTMENT.Models;
 using BASEDDEPARTMENT.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using System.Data;
 using System.Security.Claims;
 
@@ -175,59 +176,90 @@ namespace BASEDDEPARTMENT.Services.AccountService
 			return await Task.FromResult(_context.Posts.Where(x => x.UserId == userId).ToList());
 		}
 
+		public async Task<string> GetUserProfilePicture(string userId)
+		{
+			var user = await GetUserAsync(userId);
+			return await Task.FromResult(user.Images.FirstOrDefault(x => x.ImageType == Enums.ImageType.ProfileImage)?.ImgUrl);
+		}
+
+		private IEnumerable<ImageViewModel> GetImageVMs(IEnumerable<Image> images)
+		{
+			var _images = new List<ImageViewModel>(images.Select(async image => new ImageViewModel
+			{
+				ImageId = image.Id,
+				ImagePath = image.ImgUrl,
+				UserId = image.UserId,
+				UserName = image.User.UserName,
+				ProfileImagePath = await GetUserProfilePicture(image.UserId),
+				UploadedDate = image.UploadDate,
+			}).Select(x => x.Result).OrderByDescending(x => x.UploadedDate));
+
+
+			return _images;
+		}
+
 		public async Task<UserProfileViewModel> CreateUserProfileViewModel(string userId)
 		{
 			var user = await GetUserAsync(userId);
 			var posts = await GetUserPostsAsync(userId);
+			var vm = new UserProfileViewModel
+			{
+				Id = user!.Id,
+				UserName = user!.UserName,
+				ImgUrl = await GetUserProfilePicture(user.Id),
+				Posts = posts.Select(async post => new PostViewModel
+				{
+					UserId = userId,
+					Content = post.Content,
+					CreatedDate = post.CreatedDate,
+					UpdatedDate = post.UpdatedDate,
+					PostId = post.Id,
+					UserImgUrl = await GetUserProfilePicture(post.UserId),
+					Images = GetImageVMs(post.Images),
+					Comments = post.Comments.Where(comment => comment.ParentComment == null)
+										 .Select(async comment => new CommentViewModel //need to add Take(N) and Replies
+										 {
+											 UserName = (await GetUserAsync(comment.UserId)).UserName,
+											 UserId = comment.UserId,
+											 Id = comment.Id,
+											 Content = comment.Content,
+											 AuthorProfileImage = await GetUserProfilePicture(comment.UserId),
+											 CreatedDate = comment.CreatedDate,
+											 UpdatedDate = comment.UpdatedDate,
+											 Replies = comment.Comments.Select(async reply => new CommentViewModel
+											 {
+												 UserName = (await GetUserAsync(reply.UserId)).UserName,
+												 UserId = reply.UserId,
+												 Id = reply.Id,
+												 Content = reply.Content,
+												 AuthorProfileImage = await GetUserProfilePicture(reply.UserId),
+												 CreatedDate = reply.CreatedDate,
+												 UpdatedDate = reply.UpdatedDate,
+											 }).Select(x => x.Result).OrderByDescending(x => x.CreatedDate),
+										 }).Select(x => x.Result).OrderByDescending(x => x.CreatedDate),
+				}).Select(x => x.Result).OrderByDescending(x => x.CreatedDate),
+			};
 
-			return  new UserProfileViewModel
-					{
-						Id = user!.Id,
-						UserName = user!.UserName,
-						ImgUrl = user!.ImgUrl,
-						Posts = posts.Select(x => new PostViewModel
-						{
-							UserId = userId,
-							Content = x.Content,
-							CreatedDate = x.CreatedDate,
-							UpdatedDate = x.UpdatedDate,
-							PostId = x.Id,
-							Comments = x.Comments.Where(d => d.ParentComment == null)
-												 .Select(async c => new CommentViewModel //need to add Take(N) and Replies
-							{
-								UserName = (await GetUserAsync(c.UserId)).UserName,
-								UserId = c.UserId,
-								Id = c.Id,
-								Content = c.Content,
-								AuthorProfileImage = await GetUserImageUrl(c.UserId),
-								CreatedDate = c.CreatedDate,
-								UpdatedDate = c.UpdatedDate,
-								Replies = c.Comments.Select(async w =>  new CommentViewModel
-								{
-									UserName = (await GetUserAsync(w.UserId)).UserName,
-									UserId = w.UserId,
-									Id = w.Id,
-									Content = w.Content,
-									AuthorProfileImage = await GetUserImageUrl(w.UserId),
-									CreatedDate = w.CreatedDate,
-									UpdatedDate = w.UpdatedDate,
-								}).Select(x => x.Result).OrderByDescending(x => x.CreatedDate),
-							}).Select(x => x.Result).OrderByDescending(x => x.CreatedDate),
-						}).OrderByDescending(x => x.CreatedDate),
-					};
+			return vm;
 		}
 
-		public async Task<string> GetUserImageUrl(string id)
-		{
-			return (await GetUserAsync(id)).ImgUrl;
-		}
-
-		public async Task UpdateUserImage(string id, AddImgViewModel model)
+		public async Task UpdateUserProfileImage(string id, AddImgViewModel model)
 		{
 			var request = new HttpClient();
 			await request.GetAsync(model.ImgUrl);
 			var user = await GetUserAsync(id);
-			user!.ImgUrl = model.ImgUrl;
+
+			var image = user.Images.FirstOrDefault(x => x.ImageType == Enums.ImageType.ProfileImage);
+			image.ImageType = Enums.ImageType.PostImage;
+			_context.Images.Update(image);
+
+			user.Images.Add(new Image
+			{
+				Id = Guid.NewGuid().ToString(),
+				ImageType = Enums.ImageType.ProfileImage,
+			});
+			await _userManager.UpdateAsync(user);
+
 			_context.SaveChanges();
 		}
 

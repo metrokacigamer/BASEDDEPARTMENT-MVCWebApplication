@@ -1,4 +1,4 @@
-﻿using BASEDDEPARTMENT.EntityModels;
+﻿using BASEDDEPARTMENT.Entities;
 using BASEDDEPARTMENT.Models;
 
 namespace BASEDDEPARTMENT.Services.PostService
@@ -11,7 +11,5 @@ namespace BASEDDEPARTMENT.Services.PostService
         Task Delete(Post entity);
         Task Update(Post entity);
         Task<PostViewModel> GetPostViewModel(string postId);
-
-
 	}
 }
