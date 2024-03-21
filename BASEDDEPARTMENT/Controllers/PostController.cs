@@ -1,4 +1,6 @@
-﻿using BASEDDEPARTMENT.Models;
+﻿using BASEDDEPARTMENT.EntityModels;
+using BASEDDEPARTMENT.Models;
+using BASEDDEPARTMENT.Services.PostService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -7,16 +9,28 @@ using System.Security.Claims;
 
 namespace BASEDDEPARTMENT.Controllers
 {
-	public class PostController : Controller
+    public class PostController : Controller
 	{
 		private readonly UserManager<AppUser> _userManager;
 		private readonly MyDBContext _context;
+		private readonly IPostService _postService;
 
-		public PostController(UserManager<AppUser> userManager, MyDBContext context)
+		public PostController(UserManager<AppUser> userManager, MyDBContext context, IPostService postService)
 		{
 			_userManager = userManager;
 			_context = context;
+			_postService = postService;
 		}
+
+
+		[HttpGet]
+		public async Task<IActionResult> GetPost(string postId)
+		{
+			var postVM = await _postService.GetPostViewModel(postId);
+			return View(postVM);
+		}
+
+
 
 		[HttpPost]
 		[Authorize]
@@ -30,14 +44,16 @@ namespace BASEDDEPARTMENT.Controllers
 				}
 
 				var user = await _userManager.FindByIdAsync(userId);
-				user!.Posts!.Add(new Post {
-					Id = Guid.NewGuid().ToString(),
-					Content = postContent,
-					CreatedDate = DateTime.Now,
-					UpdatedDate = DateTime.Now,
-				});
+				await _postService.Create(
+					new Post 
+					{
+						Id = Guid.NewGuid().ToString(),
+						Content = postContent,
+						CreatedDate = DateTime.Now,
+						UpdatedDate = DateTime.Now,
+						User = user,
+					});
 
-				_context.SaveChanges();		
 			}
 			return RedirectToAction("Profile", "Account");
 		}
@@ -48,8 +64,9 @@ namespace BASEDDEPARTMENT.Controllers
 		{
 			if (ModelState.IsValid)
 			{
-				var post = await _context.Posts.FirstOrDefaultAsync(x => x.Id == postId);
-				if (post!.UserId != User.FindFirst(ClaimTypes.NameIdentifier)!.Value || post == default)
+				var post = await _postService.Get(postId);
+				var notAuthorizedOrNoSuchPost = post!.UserId != User.FindFirst(ClaimTypes.NameIdentifier)!.Value || post == default;
+				if (notAuthorizedOrNoSuchPost)
 				{
 					return RedirectToAction("Profile", "Account");
 				}
@@ -65,11 +82,10 @@ namespace BASEDDEPARTMENT.Controllers
 		{
 			if(ModelState.IsValid)
 			{
-				var post = await _context.Posts.FirstOrDefaultAsync(x => x.Id == model.PostId);
+				var post = await _postService.Get(model.PostId!);
 				post!.Content = model.Content;
 				post!.UpdatedDate = DateTime.Now;
-				_context.Posts.Update(post);
-				_context.SaveChanges();
+				await _postService.Update(post);
 				
 				return RedirectToAction("Profile", "Account");
 			}
@@ -83,14 +99,14 @@ namespace BASEDDEPARTMENT.Controllers
 		{
 			if (ModelState.IsValid)
 			{
-				var post = await _context.Posts.FirstOrDefaultAsync(x => x.Id == postId);
-				if (post!.UserId != User.FindFirst(ClaimTypes.NameIdentifier)!.Value || post == default)
+				var post = await _postService.Get(postId);
+				var notAuthorizedOrNoSuchPost = post!.UserId != User.FindFirst(ClaimTypes.NameIdentifier)!.Value || post == default;
+				if (notAuthorizedOrNoSuchPost)
 				{
 					return RedirectToAction("Profile", "Account");
 				}
-				
-				_context.Posts.Remove(post!);
-				_context.SaveChanges();
+
+				await _postService.Delete(post!);
 			}
 			return RedirectToAction("Profile", "Account");
 		}

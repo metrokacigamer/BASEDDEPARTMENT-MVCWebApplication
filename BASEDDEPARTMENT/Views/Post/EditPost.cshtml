@@ -1,9 +1,9 @@
 ﻿@model EditPostViewModel
 
-<div>
+<div style="display: flex; flex-direction: row; justify-content: space-evenly;">
 	<form class ="add-content" asp-action="EditPost" asp-controller="Post">
 			<div class="text-danger" asp-validation-summary="ModelOnly"></div>
-			<textarea asp-for="Content" class="add-post" oninput="autoExpand(this)"></textarea>
+		<textarea asp-for="Content" class="add-post" onblur="shrinkIfNoContent(this)" onclick="expandIfContent(this)" oninput="autoExpand(this)"></textarea>
 			<input type="hidden" name="PostId" value="@Model.PostId"/>
 			<span asp-validation-for="Content" class="text-danger"></span>
 			<button type="submit" class="btn btn-outline-primary" style="margin: 20px 0; max-width: 150px;">Edit Post</button>
@@ -53,5 +53,15 @@
 		} else {
 			textarea.style.overflowY = 'hidden';
 		}
+	}
+	function expandIfContent(textarea) {
+		// Check if textarea already has content
+		if (textarea.value.trim().length > 0) {
+			autoExpand(textarea); // Expand textarea if it has content
+		}
+	}
+
+	function shrinkIfNoContent(textarea) {
+			textarea.style.height = 'auto';
 	}
 </script>

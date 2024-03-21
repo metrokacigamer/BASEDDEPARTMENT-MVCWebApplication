@@ -1,9 +1,13 @@
+using BASEDDEPARTMENT.EntityModels;
+using BASEDDEPARTMENT.Repositories;
+using BASEDDEPARTMENT.Services.AccountService;
+using BASEDDEPARTMENT.Services.PostService;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace BASEDDEPARTMENT
 {
-	public class Program
+    public class Program
 	{
 		public static void Main(string[] args)
 		{
@@ -19,6 +23,9 @@ namespace BASEDDEPARTMENT
 				})
 				.AddEntityFrameworkStores<MyDBContext>()
 				.AddDefaultTokenProviders();
+
+			builder.Services.ConfigureServices();
+
 			var app = builder.Build();
 
 			// Configure the HTTP request pipeline.

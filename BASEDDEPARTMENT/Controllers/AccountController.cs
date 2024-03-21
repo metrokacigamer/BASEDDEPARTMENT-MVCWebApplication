@@ -1,26 +1,34 @@
-﻿using BASEDDEPARTMENT.Models;
+﻿using BASEDDEPARTMENT.EntityModels;
+using BASEDDEPARTMENT.Models;
+using BASEDDEPARTMENT.Services.AccountService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Razor.TagHelpers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace BASEDDEPARTMENT.Controllers
 {
-	public class AccountController : Controller
+	[Authorize]
+    public class AccountController : Controller
 	{
 		private readonly UserManager<AppUser> _userManager;
 		private readonly SignInManager<AppUser> _signInManager;
 		private readonly RoleManager<IdentityRole> _roleManager;
 		private readonly MyDBContext _context;
+		private readonly IAccountService _accountService;
 
-		public AccountController(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, RoleManager<IdentityRole> roleManager, MyDBContext context)
+		public AccountController(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, RoleManager<IdentityRole> roleManager, MyDBContext context, IAccountService accountService)
 		{
 			_userManager = userManager;
 			_signInManager = signInManager;
 			_roleManager = roleManager;
 			_context = context;
+			_accountService = accountService;
 		}
 
 		[HttpGet]
@@ -31,20 +39,9 @@ namespace BASEDDEPARTMENT.Controllers
 			{
 				int pageSize = 15;
 
-				var users = _userManager.Users.Where(x => x.UserName!.Contains(searchString))
-											.OrderBy(x => x.Id)
-											.Skip((currentPage - 1) * pageSize)
-											.Take(pageSize).ToList();
+				var viewModel = _accountService.GetAssignRoleViewModel(searchString, currentPage, pageSize);
 
-				var roles = _roleManager.Roles.ToList();
-
-				var userRoles = _context.UserRoles.ToList();
-
-				var viewModel = new AssignRoleViewModel
-				{
-					Users = users,
-					UserRoles = userRoles,
-				};
+				var roles = _accountService.GetRoles();
 
 				ViewData["i"] = (currentPage - 1) * pageSize;
 				ViewData["CurrentPage"] = currentPage;
@@ -55,6 +52,7 @@ namespace BASEDDEPARTMENT.Controllers
 
 				return View(viewModel);
 			}
+
 			return RedirectToAction("Index", "Home");
 		}
 
@@ -64,16 +62,7 @@ namespace BASEDDEPARTMENT.Controllers
 		{
 			if (ModelState.IsValid)
 			{
-				var user = _userManager.Users.FirstOrDefault(x => x.Id.ToString() == viewModel.UserId);
-				var roleId = _context.UserRoles.FirstOrDefault(x => x.UserId.ToString() == viewModel.UserId)!.RoleId;
-
-				if (roleId != default)
-				{
-					var roleName = _roleManager.Roles.FirstOrDefault(x => x.Id == roleId)!.Name;
-					await _userManager.RemoveFromRoleAsync(user!, roleName!);
-				}
-
-				await _userManager.AddToRoleAsync(user!, viewModel.Role!);
+				await _accountService.AssignUserRole(viewModel);
 			}
 
 			return RedirectToAction("AssignRole", "Account");
@@ -83,9 +72,7 @@ namespace BASEDDEPARTMENT.Controllers
 		[Authorize(Roles = "Admin")]
 		public IActionResult CreateRole()
 		{
-			var roleNames = _context.Roles.Select(x => x.Name).ToList();
-			var model = new CreateRoleViewModel();
-			model.Roles = roleNames!;
+			var model = _accountService.GenerateCreateRoleViewModel();
 			return View(model);
 		}
 
@@ -95,54 +82,57 @@ namespace BASEDDEPARTMENT.Controllers
 		{
 			if (ModelState.IsValid)
 			{
-				await _roleManager.CreateAsync(new IdentityRole { Name = role.RoleName });
+				await _accountService.CreateRoleAsync(role.RoleName);
 			}
 			return RedirectToAction("Index", "Home");
 		}
 
 		[HttpGet]
+		[AllowAnonymous]
 		public IActionResult Register()
 		{
 			return View();
 		}
 
 		[HttpPost]
+		[AllowAnonymous]
 		public async Task<IActionResult> Register(RegisterViewModel model)
 		{
 			if (ModelState.IsValid)
 			{
-				var user = new AppUser { UserName = model.UserName };
-				if (await _userManager.FindByNameAsync(model.UserName!) != null)
+				var userWithSuchNameExists = await _accountService.UserWithSuchNameExists(model.UserName);
+				if (userWithSuchNameExists)
 				{
 					ModelState.AddModelError(string.Empty, "Username is already taken");
 
 					return View();
 				}
-				var result = await _userManager.CreateAsync(user, model.Password!);
+
+				var user = new AppUser { UserName = model.UserName };
+				var result = await _accountService.CreateUserAsync(user, model.Password);
 
 				if (result.Succeeded)
 				{
-					await _userManager.AddToRoleAsync(user, "Xixo");
-					await _signInManager.SignInAsync(user, isPersistent: false);
+					await _accountService.AssignRoleAndSignIn(user, "Xixo", false); // false = isPersistent :
 
 					return RedirectToAction("Index", "Home");
 				}
-				foreach (var error in result.Errors)
-				{
-					ModelState.AddModelError(string.Empty, error.Description);
-				}
+
+				GetErrors(result);
 			}
 
 			return View(model);
 		}
 
 		[HttpPost]
+		[AllowAnonymous]
 		public async Task<IActionResult> Login(LoginViewModel model)
 		{
 			if (ModelState.IsValid)
 			{
-				var result = await _signInManager.PasswordSignInAsync(model.UserName!, model.Password!, isPersistent: false, false);
-
+				var lockoutOnFailure = false;
+				var isPersistent = false;
+				var result = await _accountService.PasswordSignInAsync(model, isPersistent, lockoutOnFailure);
 				if (result.Succeeded)
 				{
 					return RedirectToAction("Index", "Home");
@@ -157,29 +147,26 @@ namespace BASEDDEPARTMENT.Controllers
 		}
 
 		[HttpGet]
+		[AllowAnonymous]
 		public IActionResult Login()
 		{
 			return View();
 		}
 
 		[HttpGet]
-		[Authorize]
 		public async Task<IActionResult> Logout()
 		{
-			await _signInManager.SignOutAsync();
-
+			await _accountService.UserSignOutAsync();
 			return RedirectToAction("Index", "Home");
 		}
 
 		[HttpGet]
-		[Authorize]
 		public async Task<IActionResult> EditProfile(string actionName = "username")
 		{
 			if (ModelState.IsValid)
 			{
-				var id = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
-				var user = await _userManager.FindByIdAsync(id);
-				var userVM = new EditProfileViewModel { UserName = user!.UserName!, Id = user.Id, ActionName = actionName, Email = user.Email! };
+				var id = _accountService.GetIdOfAuthorizedUser(User);
+				var userVM = await _accountService.GenerateEditProfileViewModel(actionName, id);
 
 				return View(userVM);
 			}
@@ -187,10 +174,9 @@ namespace BASEDDEPARTMENT.Controllers
 		}
 
 		[HttpGet]
-		[Authorize]
 		public IActionResult ChangeUserName(string userName, string id)
 		{
-			if (id != User.FindFirst(ClaimTypes.NameIdentifier)!.Value)
+			if (!_accountService.RequestIsAuthorized(User, id))
 			{
 				return RedirectToAction("Index", "Home");
 			}
@@ -204,38 +190,44 @@ namespace BASEDDEPARTMENT.Controllers
 		}
 
 		[HttpPost]
-		[Authorize]
 		public async Task<IActionResult> ChangeUserName(ChangeUserNameViewModel model)
 		{
 			if (ModelState.IsValid)
 			{
-				var user = await _userManager.FindByIdAsync(model.Id!);
-				var result = await _userManager.CheckPasswordAsync(user!, model.Password!);
+				var user = await _accountService.GetUserAsync(model.Id!);
+				var result = await _accountService.CheckPasswordAsync(user!, model.Password!);
+
 				if (!result)
 				{
 					ModelState.AddModelError(string.Empty, "Incorrect password.");
 
 					return View(model);
 				}
-				if (await _userManager.FindByNameAsync(model.NewUserName!) == null)
+				else if (await _accountService.GetUserByNameAsync(model.NewUserName) == null)
 				{
 					user!.UserName = model.NewUserName;
-					var res = await _userManager.UpdateAsync(user);
+					var res = await _accountService.UpdateUserAsync(user);
 
-					return RedirectToAction("EditProfile", "Account");
+					if (res.Succeeded)
+					{
+						return RedirectToAction("EditProfile", "Account");
+					}
+
+					GetErrors(res);
 				}
 				else
 				{
 					ModelState.AddModelError(string.Empty, "Username is already taken.");
 				}
 			}
+
 			return View(model);
 		}
+
 		[HttpGet]
-		[Authorize]
 		public IActionResult ChangeUserPassword(string userName, string id)
 		{
-			if (id != User.FindFirst(ClaimTypes.NameIdentifier)!.Value)
+			if (!_accountService.RequestIsAuthorized(User, id))
 			{
 				return RedirectToAction("Index", "Home");
 			}
@@ -248,38 +240,44 @@ namespace BASEDDEPARTMENT.Controllers
 		}
 
 		[HttpPost]
-		[Authorize]
 		public async Task<IActionResult> ChangeUserPassword(ChangeUserPassViewModel model)
 		{
 			if (ModelState.IsValid)
 			{
-				var user = await _userManager.FindByIdAsync(model.Id!);
-				var result = await _userManager.CheckPasswordAsync(user!, model.CurrentPassword!);
+				var user = await _accountService.GetUserAsync(model.Id!);
+				var result = await _accountService.CheckPasswordAsync(user!, model.CurrentPassword!);
+
 				if (!result)
 				{
 					ModelState.AddModelError(string.Empty, "Current password is incorrect.");
 
 					return View(model);
 				}
-				if (model.NewPassword == model.ConfirmNewPassword)
-				{
-					await _userManager.ChangePasswordAsync(user!, model.CurrentPassword!, model.NewPassword!);
 
+				var res = await _accountService.ChangePasswordAsync(user!, model.CurrentPassword!, model.NewPassword!);
+
+				if (res.Succeeded)
+				{
 					return RedirectToAction("EditProfile", "Account");
 				}
-				else
-				{
-					ModelState.AddModelError(string.Empty, "Passwords do not match.");
-				}
+				GetErrors(res);
 			}
 			return View(model);
 		}
 
+		[NonAction]
+		private void GetErrors(IdentityResult res)
+		{
+			foreach (var error in res.Errors)
+			{
+				ModelState.AddModelError(string.Empty, error.Description);
+			}
+		}
+
 		[HttpGet]
-		[Authorize]
 		public IActionResult AttachUserEmail(string userName, string id)
 		{
-			if (id != User.FindFirst(ClaimTypes.NameIdentifier)!.Value)
+			if (!_accountService.RequestIsAuthorized(User, id))
 			{
 				return RedirectToAction("Index", "Home");
 			}
@@ -288,69 +286,78 @@ namespace BASEDDEPARTMENT.Controllers
 				UserName = userName,
 				Id = id,
 			};
+
 			return View(model);
 		}
 
 		[HttpPost]
-		[Authorize]
 		public async Task<IActionResult> AttachUserEmail(AttachUserEmailViewModel model)
 		{
 			if (ModelState.IsValid)
 			{
-				var user = await _userManager.FindByIdAsync(model.Id!);
-				var passResult = await _userManager.CheckPasswordAsync(user!, model.Password!);
+				var user = await _accountService.GetUserAsync(model.Id!);
+				var passResult = await _accountService.CheckPasswordAsync(user!, model.Password!);
+
 				if (!passResult)
 				{
 					ModelState.AddModelError(string.Empty, "Incorrect password.");
+
 					return View(model);
 				}
-				var result = await _userManager.FindByEmailAsync(model.Email!);
+
+				var result = await _accountService.GetUserByEmailAsync(model.Email!);
+
 				if (result == null)
 				{
-					await _userManager.SetEmailAsync(user!, model.Email);
-
-					return RedirectToAction("EditProfile", "Account");
+					var res = await _accountService.SetEmailAsync(user, model.Email);
+					if (res.Succeeded)
+					{
+						return RedirectToAction("EditProfile", "Account");
+					}
+					GetErrors(res);
 				}
-
-				ModelState.AddModelError(string.Empty, "Email is already attached to a profile.");
+				else
+				{
+					ModelState.AddModelError(string.Empty, "Email is already attached to a profile.");
+				}
 			}
 			return View(model);
 		}
 
 		[HttpGet]
-		[Authorize]
 		public IActionResult ChangeUserEmail(string userName, string id, string email)
 		{
-			if (id != User.FindFirst(ClaimTypes.NameIdentifier)!.Value)
+			if (!_accountService.RequestIsAuthorized(User, id))
 			{
 				return RedirectToAction("Index", "Home");
 			}
+
 			var model = new ChangeUserEmailViewModel
 			{
 				Email = email,
 				UserName = userName,
 				Id = id,
 			};
+
 			return View(model);
 		}
 
 		[HttpPost]
-		[Authorize]
 		public async Task<IActionResult> ChangeUserEmail(ChangeUserEmailViewModel model)
 		{
 			if (ModelState.IsValid)
 			{
-				var user = await _userManager.FindByIdAsync(model.Id!);
-				var passResult = await _userManager.CheckPasswordAsync(user!, model.Password!);
+				var user = await _accountService.GetUserAsync(model.Id!);
+				var passResult = await _accountService.CheckPasswordAsync(user!, model.Password!);
 				if (!passResult)
 				{
 					ModelState.AddModelError(string.Empty, "Incorrect password.");
 					return View(model);
 				}
-				var result = await _userManager.FindByEmailAsync(model.NewEmail!);
+				var result = await _accountService.GetUserByEmailAsync(model.NewEmail!);
 				if (result == null)
 				{
-					var _token = await _userManager.GenerateChangeEmailTokenAsync(user!, model.NewEmail!);
+					var _token = await _accountService.GenerateChangeEmailTokenAsync(user!, model.NewEmail!);
 
 					return RedirectToAction("CheckEmailChangeToken", "Account", new { id = model.Id, newEmail = model.NewEmail, token = _token });
 				}
@@ -362,13 +369,13 @@ namespace BASEDDEPARTMENT.Controllers
 		}
 
 		[HttpGet]
-		[Authorize]
 		public IActionResult CheckEmailChangeToken(string id, string newEmail, string token)
 		{
-			if (id != User.FindFirst(ClaimTypes.NameIdentifier)!.Value)
+			if (!_accountService.RequestIsAuthorized(User, id))
 			{
 				return RedirectToAction("Index", "Home");
 			}
+
 			var model = new EmailChangeTokenValidationViewModel
 			{
 				Id = id,
@@ -379,73 +386,55 @@ namespace BASEDDEPARTMENT.Controllers
 			return View(model);
 		}
 
-
 		[HttpPost]
-		[Authorize]
 		public async Task<IActionResult> CheckEmailChangeToken(EmailChangeTokenValidationViewModel model)
 		{
 			if (ModelState.IsValid)
 			{
-				var user = await _userManager.FindByIdAsync(model.Id!);
-				var result = await _userManager.ChangeEmailAsync(user!, model.Email!, model.Token!);
+				var user = await _accountService.GetUserAsync(model.Id!);
+				var result = await _accountService.ChangeUserEmailAsync(user!, model.Email!, model.Token!);
 
 				if (result.Succeeded)
 				{
 					return RedirectToAction("EditProfile", "Account", new { actionName = "email" });
 				}
-				foreach (var error in result.Errors)
-				{
-					ModelState.AddModelError(string.Empty, error.Description);
-				}
+				GetErrors(result);
 			}
 
 			return View(model);
 		}
 
 		[HttpGet]
+		[AllowAnonymous]
 		public async Task<IActionResult> Profile(string userId = "")
 		{
 			if (ModelState.IsValid)
 			{
-				if(userId == string.Empty)
+				if(userId.IsNullOrEmpty())
 				{
-					userId = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+					userId = _accountService.GetIdOfAuthorizedUser(User);
 				}
-				var user = await _userManager.FindByIdAsync(userId);
-				var posts = _context.Posts.Where(x => x.UserId == user!.Id).ToList();
-				var userVM = new UserProfileViewModel {
-					Id = user!.Id,
-					UserName = user!.UserName,
-					ImgUrl = user!.ImgUrl,
-					Posts = posts.Select(x => new PostViewModel { Content = x.Content, CreatedDate = x.CreatedDate, UpdatedDate = x.UpdatedDate, PostId = x.Id}),
-				};
 
+				var userVM = await _accountService.CreateUserProfileViewModel(userId);
 				return View(userVM);
 			}
 			return RedirectToAction("Index", "Home");
 		}
 
 		[HttpGet]
-		[Authorize]
 		public IActionResult AddProfilePicture()
 		{
 			return View();
 		}
 
 		[HttpPost]
-        [Authorize]
         public async Task<IActionResult> AddProfilePicture(AddImgViewModel model)
         {
 			if (ModelState.IsValid)
 			{
-				var request = new HttpClient();
 				try
 				{
-					var result = await request.GetAsync(model.ImgUrl);
-					var id = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
-					var user = await _userManager.FindByIdAsync(id);
-					user!.ImgUrl = model.ImgUrl;
-					_context.SaveChanges();
+					await _accountService.UpdateUserImage(_accountService.GetIdOfAuthorizedUser(User), model);
 				}
 				catch (Exception ex)
 				{
