@@ -362,4 +362,4 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /BASEDDEPARTMENT/ToDo.txt
-/BASEDDEPARTMENT/wwwroot/images/
+/BASEDDEPARTMENT/wwwroot/images/*
