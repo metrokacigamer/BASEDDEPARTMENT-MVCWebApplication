@@ -41,11 +41,6 @@ namespace BASEDDEPARTMENT.Controllers
 			return View(postVM);
 		}
 
-		public IImageService Get_imageService()
-		{
-			return _imageService;
-		}
-
 		[HttpPost]
 		[Authorize]
 		public async Task<IActionResult> AddPost(string userId, string postContent, IFormFile imageFile)
@@ -63,7 +58,7 @@ namespace BASEDDEPARTMENT.Controllers
 				{
 					var fileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
 					var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", fileName);
-
+					var relativePath = $@"~/images/{fileName}";
 					using (var stream = new FileStream(imagePath, FileMode.Create))
 					{
 						await imageFile.CopyToAsync(stream);
@@ -88,7 +83,7 @@ namespace BASEDDEPARTMENT.Controllers
 					{
 						Id = Guid.NewGuid().ToString(),
 						ImageType = Enums.ImageType.PostImage,
-						ImgUrl = imagePath,
+						ImgUrl = relativePath,
 						Post = post,
 						User = _user,
 						UploadDate = DateTime.Now,
